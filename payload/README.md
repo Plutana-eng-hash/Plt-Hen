@@ -1,38 +1,49 @@
-# Plutana-HEN raw payload target (PS4 14.02)
+# Plutana-HEN raw payload — PS4 firmware 14.02
 
-This directory builds a raw PS4 payload binary using the 14.02-enabled
-[iHaiDeeZ PS4 Payload SDK](https://github.com/iHaiDeeZ/ps4-payload-sdk).
+This directory builds `Plutana-HEN.bin`, a raw payload for an already-enabled
+PS4 environment. It is not an ELF, PRX, EBOOT, or PKG.
 
-## Output
+## Implemented in this build
 
-`Plutana-HEN.bin` is emitted by the SDK linker script and `objcopy -O binary`.
-It is a raw payload, not an ELF, PRX, EBOOT, or PKG.
+- Resident startup: starts detached service threads and returns from the
+  payload entry point without ending those workers.
+- FTP server on TCP port 2121:
+  - Login: `plutana`
+  - Password: `Plutana14.02!`
+  - Passive mode, directory listing, download, upload, SIZE, CWD, PWD.
+  - FTP is deliberately rooted at `/data/Plutana`; it cannot traverse to
+    arbitrary console paths.
+- Userland log stream on TCP port 3232. Connect with a TCP client to receive
+  the current log snapshot.
+- Runtime log file: `/data/Plutana/plutana.log`.
 
-## Responsibility split
+## Not implemented / not claimed
 
-- `Plutana-HEN.bin` is a small payload-stage bootstrap. It verifies firmware
-  14.02 and checks that a privileged session is already active.
-- The actual controller-driven graphical menu is the native OpenOrbis app
-  built from `src/main.cpp`. It draws through the PS4 VideoOut framebuffer,
-  supports D-pad/Cross/Circle navigation, and contains the Games, Homebrew,
-  Packages, Controllers, Plugins, Settings, and About sections.
-- The graphical app is a separately launched user-mode application. The raw
-  payload does not pretend to be a shell overlay and does not show a fake
-  notification-based menu.
+This is not a complete GoldHEN replacement yet. GoldHEN's published feature
+list includes kernel and system patches, remote package installation,
+plugin loading, rest-mode handling, overlays, and other features. This
+payload currently implements the userland FTP and log services only.
 
-## Security and compatibility limits
+The public PS4 payload SDK has a 14.02 XFAST_SYSCALL offset, but its 14.02
+PRISON_0 value is explicitly marked as a placeholder and its ROOTVNODE
+support is not verified. The SDK's generic jailbreak helper therefore
+returns without applying the 14.02 credential/root patches. Plutana does not
+write kernel memory using those unverified values.
 
-This payload does not contain a firmware exploit or kernel patch chain. It
-cannot jailbreak a stock 14.02 console on its own. The SDK's generic jailbreak
-helper does not supply a complete 14.02 exploit implementation.
-
-The native menu is not a replacement for the PS4 system shell and does not
-draw over games. A shell/game overlay would require a separate, verified
-graphics hook/runtime. Do not rename an ELF or PKG to `.bin`; they are
-different executable formats.
+The BinLoader on port 9090 is not enabled in this build. Executing arbitrary
+network-delivered payloads requires a separately verified executable-memory
+and thread-entry implementation; a TCP listener that merely accepts bytes
+would not be a working BinLoader.
 
 ## Build
 
-GitHub Actions builds the native ELF, GoldHEN PRX, and raw payload as separate
-artifacts. The payload Makefile provides the default `all` target expected by
-the SDK's Docker build action.
+GitHub Actions uses the Scene Collective PS4 Payload SDK fork with 14.02
+support. The output is checked as a non-empty raw binary. A successful build
+does not by itself prove runtime compatibility on physical hardware.
+
+## FTP security note
+
+Change the default FTP password in `source/services.c` before using this
+service on an untrusted network. The FTP root is limited to
+`/data/Plutana`, but the service still permits file uploads and downloads
+within that directory.
