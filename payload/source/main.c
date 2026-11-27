@@ -8,9 +8,11 @@
 /*
  * Plutana-HEN resident payload entry point.
  *
- * This build deliberately does not run an exploit or apply unverified kernel
- * patches. It starts independent userland services after the existing loader
- * has transferred control to this payload.
+ * This payload is intended to be loaded by an existing PS4 payload loader.
+ * It does not exploit the console or attempt to unload/replace another
+ * resident payload. Controller PS-button events are not exposed by the
+ * documented libScePad button-state API, so no PS-button hot-switch is
+ * advertised as working here.
  */
 int _main(void) {
     initKernel();
@@ -19,8 +21,8 @@ int _main(void) {
 
     const uint16_t firmware = get_firmware();
     if (firmware != FW_TARGET) {
-        printf_notification("PLUTANA-HEN",
-            "Unsupported firmware. This build is for PS4 14.02 only.");
+        printf_notification("Plutana-HEN",
+            "Plutana-HEN not loaded: this build requires PS4 firmware 14.02.");
         return 0;
     }
 
@@ -28,12 +30,23 @@ int _main(void) {
     initPthread();
 
     if (plutana_services_start() != 0) {
-        printf_notification("PLUTANA-HEN",
-            "Service startup failed. Check /data/Plutana/plutana.log.");
+        printf_notification("Plutana-HEN",
+            "Plutana-HEN startup failed. Check /data/Plutana/plutana.log.");
         return -1;
     }
 
-    printf_notification("PLUTANA-HEN",
-        "Loaded. FTP:2121  Klog:3232. See /data/Plutana/plutana.log.");
+    plutana_log("INFO", "Plutana-HEN loaded successfully on firmware 14.02.");
+    printf_notification("Plutana-HEN",
+        "Plutana-HEN loaded. FTP:2121 | Logs:3232.");
+
+    /*
+     * The PS button is reserved by the PS4 system shell and is absent from
+     * the documented scePadReadState button mask. A five-PS-button-press
+     * GoldHEN handoff cannot safely be implemented through that API. Do not
+     * claim that pressing PS five times switches payloads.
+     */
+    printf_notification("Plutana-HEN",
+        "PS-button x5 switching is not available in this build.");
+
     return 0;
 }
