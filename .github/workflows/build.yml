@@ -51,19 +51,10 @@ jobs:
             exit 1
           fi
 
-          clangxx="$(find "$root" -type f -name clang++ -perm -u+x -print -quit)"
-          lld="$(find "$root" -type f -name ld.lld -perm -u+x -print -quit)"
-          if [[ -z "$clangxx" || -z "$lld" ]]; then
-            echo "OpenOrbis LLVM compiler/linker binaries were not found in the release archive." >&2
-            find "$root" -maxdepth 6 -type f | head -200
-            exit 1
-          fi
-
           echo "OO_PS4_TOOLCHAIN=$sdk" >> "$GITHUB_ENV"
-          echo "PATH=$(dirname "$clangxx"):$(dirname "$lld"):$PATH" >> "$GITHUB_ENV"
           echo "SDK root: $sdk"
-          "$clangxx" --version
-          "$lld" --version
+          clang++ --version
+          ld.lld --version
       - name: Compile native PS4 ELF
         run: bash scripts/build-ps4.sh build
       - name: Verify target ELF
