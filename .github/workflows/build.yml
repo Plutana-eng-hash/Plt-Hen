@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  host-tests:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -23,26 +23,47 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install OpenOrbis PS4 toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang lld llvm make cmake python3 git curl zip
-          git clone --depth 1 https://github.com/OpenOrbis/PS4-Toolchain.git "$RUNNER_TEMP/PS4-Toolchain"
-          cd "$RUNNER_TEMP/PS4-Toolchain"
-          chmod +x toolchain.sh
-          ./toolchain.sh -i
-      - name: Compile native PS4 ELF
+      - name: Download latest OpenOrbis toolchain release
         shell: bash
         run: |
           set -euo pipefail
-          TOOLCHAIN="$RUNNER_TEMP/PS4-Toolchain"
-          export OO_PS4_TOOLCHAIN="$TOOLCHAIN"
-          export PATH="$TOOLCHAIN/bin:$PATH"
-          mkdir -p build
-          orbis-clang++ -std=c++17 -O2 -Wall -Wextra -Werror -Iinclude \
-            src/main.cpp src/core.cpp -o build/Vypex-Cr_ck.elf
+          python3 - <<'PY'
+          import json, os, urllib.request, zipfile, io
+          api = "https://api.github.com/repos/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/latest"
+          request = urllib.request.Request(api, headers={"Accept": "application/vnd.github+json", "User-Agent": "Vypex-Cr_ck-CI"})
+          with urllib.request.urlopen(request, timeout=60) as response:
+              release = json.load(response)
+          assets = [a for a in release.get("assets", []) if a["name"].lower().endswith(".zip")]
+          assets = [a for a in assets if "source" not in a["name"].lower() and "windows" not in a["name"].lower() and "mac" not in a["name"].lower()]
+          if not assets:
+              raise SystemExit("No Linux-compatible OpenOrbis toolchain ZIP was attached to the latest release.")
+          asset = next((a for a in assets if "linux" in a["name"].lower()), assets[0])
+          req = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "Vypex-Cr_ck-CI"})
+          with urllib.request.urlopen(req, timeout=180) as response:
+              data = response.read()
+          root = os.path.join(os.environ["RUNNER_TEMP"], "openorbis")
+          os.makedirs(root, exist_ok=True)
+          with zipfile.ZipFile(io.BytesIO(data)) as archive:
+              archive.extractall(root)
+          candidates = []
+          for current, dirs, files in os.walk(root):
+              if "link.x" in files and "crt1.o" in files:
+                  candidates.append(current)
+          if not candidates:
+              raise SystemExit("Downloaded release did not contain the expected OpenOrbis link.x and lib/crt1.o files.")
+          toolchain = candidates[0]
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write("OO_PS4_TOOLCHAIN=" + toolchain + "\n")
+              env.write("PATH=" + os.path.join(toolchain, "bin", "linux") + ":" + os.environ["PATH"] + "\n")
+          print("Using toolchain at", toolchain)
+          print("Release asset:", asset["name"])
+          PY
+      - name: Compile native PS4 ELF
+        run: bash scripts/build-ps4.sh build
+      - name: Verify target ELF
+        run: |
           file build/Vypex-Cr_ck.elf
-          llvm-readelf -h build/Vypex-Cr_ck.elf
+          readelf -h build/Vypex-Cr_ck.elf
       - name: Upload PS4 ELF
         uses: actions/upload-artifact@v4
         with:
