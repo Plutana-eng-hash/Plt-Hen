@@ -139,7 +139,8 @@ void render_home(int selected,int frame) {
  text("VYPEX CR CK",1510,902,2,0xFFB69AFF);
  text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
 }
-void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,\n            const vypex::PluginEntry* plugin_items,std::size_t plugin_count,\n            int plugin_selected,bool plugin_storage_ok,int frame) {
+void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,
+            const vypex::PluginEntry* plugin_items,std::size_t plugin_count,\n            int plugin_selected,bool plugin_storage_ok,int frame) {
  rect(0,0,W,H,BG);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
  text("VYPEX CR CK",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
@@ -223,7 +224,9 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
 }
 int main() {
  vypex::Config config=vypex::Config::defaults();
- vypex::PluginRegistry plugins;\n vypex::PluginEntry plugin_items[MAX_PLUGINS]{};\n std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);\n const bool plugin_storage_ok=vypex::plugin_storage_ready();
+ vypex::PluginRegistry plugins;
+ vypex::PluginEntry plugin_items[MAX_PLUGINS]{};\n std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
+ const bool plugin_storage_ok=vypex::plugin_storage_ready();
  OrbisUserServiceInitializeParams params={};
  params.priority=ORBIS_KERNEL_PRIO_FIFO_LOWEST;
  const bool user_ok=sceUserServiceInitialize(&params)==0;
@@ -242,7 +245,7 @@ int main() {
   if(user_ok)sceUserServiceTerminate();
   return 1;
  }
- int page=0,selected=0; std::int64_t frame=1; std::uint32_t previous=0;
+ int page=0,selected=0,plugin_selected=0; std::int64_t frame=1; std::uint32_t previous=0;
  bool running=true;
  while(running){
   std::uint32_t now=0;
@@ -266,7 +269,15 @@ int main() {
   if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)selected=(selected+1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
   if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_TRIANGLE && page==3){
+   plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
+   if(plugin_count==0)plugin_selected=0;else if(plugin_selected>=static_cast<int>(plugin_count))plugin_selected=static_cast<int>(plugin_count)-1;
+  }
   if(pressed&ORBIS_PAD_BUTTON_CROSS){
+   if(page==3 && plugin_count){
+    const std::size_t idx=static_cast<std::size_t>(plugin_selected);
+    vypex::set_plugin_enabled(plugin_items,plugin_count,idx,!plugin_items[idx].enabled);
+   }
    if(page==4){
     if(selected==0)config.block_updates=!config.block_updates;
     if(selected==1)config.show_notifications=!config.show_notifications;
@@ -275,7 +286,7 @@ int main() {
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
   if(page==0) render_home(selected,static_cast<int>(frame));
-  else render(page,selected,config,plugins,plugin_items,plugin_count,selected,plugin_storage_ok,static_cast<int>(frame));
+  else render(page,selected,config,plugins,plugin_items,plugin_count,plugin_selected,plugin_storage_ok,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
  graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
