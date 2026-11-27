@@ -13,7 +13,7 @@ struct PluginEntry {
     bool enabled;
 };
 
-// Scans the PS4 data partition for .sprx files and restores saved enable flags.
+// Scans the PS4 data partition for .prx files and restores saved enable flags.
 // This is discovery/configuration only; it does not execute PRX files.
 std::size_t refresh_plugins(PluginEntry* entries, std::size_t capacity);
 bool set_plugin_enabled(PluginEntry* entries, std::size_t count,
