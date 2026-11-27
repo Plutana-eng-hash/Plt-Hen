@@ -1,4 +1,4 @@
-name: Build Vypex-Cr_ck native and GoldHEN PRX
+name: Build Plt-Hen native, PRX, and payload
 on:
   push:
     branches: [main]
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: vypex-native-${{ github.ref }}
+  group: plt-hen-build-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   host-tests:
@@ -48,18 +48,48 @@ jobs:
         run: bash scripts/build-ps4.sh build
       - name: Build GoldHEN PRX
         run: bash scripts/build-prx.sh build-prx
-      - name: Verify outputs
+      - name: Verify existing outputs
         run: |
           file build/Vypex-Cr_ck.elf
           test -s build-prx/out/Vypex-Cr_ck.prx
           file build-prx/out/Vypex-Cr_ck.prx
           readelf -h build-prx/Vypex-Cr_ck.prx.elf
-      - name: Upload PS4 ELF and GoldHEN PRX
+      - name: Upload native ELF and PRX
         uses: actions/upload-artifact@v4
         with:
-          name: Vypex-Cr_ck-PS4-ELF-and-PRX
+          name: Plt-Hen-ELF-and-PRX
           path: |
             build/Vypex-Cr_ck.elf
             build-prx/out/Vypex-Cr_ck.prx
+          if-no-files-found: error
+          retention-days: 30
+  payload-bin:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build standalone 14.02 payload
+        uses: iHaiDeeZ/ps4-payload-sdk@main
+        with:
+          app_path: payload
+          build_command: make clean all
+      - name: Verify raw payload
+        run: |
+          test -s payload/Plutana-HEN.bin
+          file payload/Plutana-HEN.bin
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("payload/Plutana-HEN.bin")
+          data = p.read_bytes()
+          if len(data) < 256:
+              raise SystemExit("payload is unexpectedly small")
+          if data[:4] == b"\x7fELF":
+              raise SystemExit("output is ELF, not a raw payload")
+          print(f"Raw payload verified: {len(data)} bytes")
+          PY
+      - name: Upload raw PS4 payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Plutana-HEN-PS4-14.02-BIN
+          path: payload/Plutana-HEN.bin
           if-no-files-found: error
           retention-days: 30
