@@ -6,6 +6,7 @@
 #include <orbis/Pad.h>
 #include <sys/types.h>
 #include <cstdint>
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -48,7 +49,7 @@ void rect(int x,int y,int w,int h,std::uint32_t color) {
  if(x<0){w+=x;x=0;} if(y<0){h+=y;y=0;}
  if(x+w>W)w=W-x; if(y+h>H)h=H-y; if(w<=0||h<=0)return;
  auto* p=reinterpret_cast<std::uint32_t*>(fb[active]);
- for(int yy=y;yy<y+h;++yy) for(int xx=x;xx<x+w;++xx)p[yy*W+xx]=color;
+ for(int yy=y;yy<y+h;++yy) std::fill_n(p+yy*W+x,w,color);
 }
 void text(const char* s,int x,int y,int scale,std::uint32_t color) {
  for(;*s;++s,x+=6*scale) {
@@ -185,7 +186,7 @@ int main() {
    OrbisPadData current={};
    if(scePadRead(pads[i],&current,1)==0&&current.connected){
     ++controller_count;
-    if(now==0)now=current.buttons;
+    now|=current.buttons;
    } else {
     scePadClose(pads[i]); pads[i]=-1;
    }
