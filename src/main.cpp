@@ -107,7 +107,8 @@ void draw_snow(int frame) {
   const int size=(i%9==0)?3:2;
   rect(x,y,size,size,(i%4==0)?SNOW:0xFF7F8B9A);
  }
-}\nvoid outline(int x,int y,int w,int h,std::uint32_t color) {
+}
+void outline(int x,int y,int w,int h,std::uint32_t color) {
  rect(x,y,w,3,color); rect(x,y+h-3,w,3,color);
  rect(x,y,3,h,color); rect(x+w-3,y,3,h,color);
 }
@@ -119,7 +120,7 @@ void home_tile(int x,int y,int w,int h,const char* title,const char* subtitle,
   const int pulse=static_cast<int>((frame/3)%40);
   outline(x-2-pulse/20,y-2-pulse/20,w+4+pulse/10,h+4+pulse/10,
           (frame/12)%2?0xFFC7D0DC:0xFFE8EDF5);
-  rect(x+18,y+18,5,h-36,0xFFB69AFF);
+  rect(x+18,y+18,5,h-36,0xFFC7D0DC);
  } else outline(x,y,w,h,0xFF383342);
  text(title,x+38,y+42,4,WHITE);
  text(subtitle,x+40,y+112,2,focused?0xFFEAF0F8:MUTED);
@@ -140,11 +141,12 @@ void set_vypex_service_enabled(bool enabled) {
 
 void render_home(int selected,int frame) {
  rect(0,0,W,H,BG);
- // A restrained purple ambient wash, kept inside the app framebuffer.
- rect(0,0,W,5,0xFF8B5CF6);
+ draw_snow(frame);
+ // Subtle animated snowfall behind the native menu.
+ rect(0,0,W,5,0xFFE8EDF5);
  text("PLUTANA HEN",70,58,5,WHITE);
  text("YOUR CONSOLE  /  HOME",330,78,2,MUTED);
- text("14 02",1690,78,2,0xFFB69AFF);
+ text("14 02",1690,78,2,0xFFC7D0DC);
  rect(70,132,1780,2,0xFF393143);
  text("WELCOME BACK",80,180,3,WHITE);
  text("A CLEANER HOME FOR YOUR PS4",80,226,2,MUTED);
@@ -156,7 +158,7 @@ void render_home(int selected,int frame) {
  for(int i=0;i<6;++i) home_tile(xs[i%3],ys[i/3],520,220,titles[i],subs[i],selected==i,frame);
  rect(80,865,1760,105,0xFF17151F);
  text("DPAD MOVE",110,902,2,MUTED);
- text("CROSS OPEN",430,902,2,0xFFE5D9FF);
+ text("CROSS OPEN",430,902,2,0xFFEAF0F8);
  text("CIRCLE EXIT",750,902,2,MUTED);
  text("PLUTANA HEN",1510,902,2,0xFFC7D0DC);
  text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
@@ -165,6 +167,7 @@ void render(int page,int selected,const vypex::Config& cfg,
             const vypex::PluginEntry* plugin_items,std::size_t plugin_count,
             int plugin_selected,bool plugin_storage_ok,int frame) {
  rect(0,0,W,H,BG);
+ draw_snow(frame);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
  text("PLUTANA HEN",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
  text("FW PROFILE 14 02",1510,48,2,PURPLE);
@@ -204,13 +207,13 @@ void render(int page,int selected,const vypex::Config& cfg,
    rect(440,350,1410,250,CARD);
    text("NO PRX PLUGINS FOUND",485,405,3,WHITE);
    text("COPY COMPATIBLE PRX FILES INTO THE PLUGIN FOLDER",485,470,2,MUTED);
-   text("USE TRIANGLE TO RESCAN THE PS4 STORAGE",485,515,2,0xFFB69AFF);
+   text("USE TRIANGLE TO RESCAN THE PS4 STORAGE",485,515,2,0xFFC7D0DC);
   } else {
    for(int row=0;row<visible && static_cast<std::size_t>(first+row)<plugin_count;++row){
     const std::size_t idx=static_cast<std::size_t>(first+row);
     const int y=350+row*105;
     const bool focused=static_cast<int>(idx)==plugin_selected;
-    rect(440,y,1410,88,focused?0xFF29213A:CARD);
+    rect(440,y,1410,88,focused?0xFF202A36:CARD);
     if(focused)rect(440,y,5,88,PURPLE);
     text(plugin_items[idx].name,475,y+17,3,WHITE);
     text(plugin_items[idx].enabled?"ENABLED":"DISABLED",1260,y+25,2,plugin_items[idx].enabled?GREEN:MUTED);
@@ -218,7 +221,7 @@ void render(int page,int selected,const vypex::Config& cfg,
    }
   }
   rect(440,900,1410,90,PANEL);
-  text("CROSS  UPDATE GOLDHEN PLUGINS.INI",470,920,2,0xFFE5D9FF);
+  text("CROSS  UPDATE GOLDHEN PLUGINS.INI",470,920,2,0xFFEAF0F8);
   text("TRIANGLE  RESCAN FOLDER",470,955,2,MUTED);
   text("FOLDER  /DATA/VYPEX-CR_CK/PLUGINS",1030,920,2,MUTED);
   text("GOLDHEN LOADS ENABLED PLUGINS WHEN AN APP OR GAME STARTS",1030,955,1,AMBER);
