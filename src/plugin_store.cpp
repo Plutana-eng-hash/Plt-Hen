@@ -26,10 +26,9 @@ bool ensure_directories() {
     return make_directory(ROOT) && make_directory(PLUGIN_DIR);
 }
 
-bool ends_with_sprx(const char* name) {
+bool ends_with_prx(const char* name) {
     const std::size_t n = std::strlen(name);
-    return n > 5 && name[n - 5] == '.' &&
-        std::tolower(static_cast<unsigned char>(name[n - 4])) == 's' &&
+    return n > 4 && name[n - 4] == '.' &&
         std::tolower(static_cast<unsigned char>(name[n - 3])) == 'p' &&
         std::tolower(static_cast<unsigned char>(name[n - 2])) == 'r' &&
         std::tolower(static_cast<unsigned char>(name[n - 1])) == 'x';
@@ -183,7 +182,7 @@ std::size_t refresh_plugins(PluginEntry* entries, std::size_t capacity) {
     std::size_t count = 0;
     dirent* item = nullptr;
     while ((item = ::readdir(dir)) != nullptr && count < capacity) {
-        if (!ends_with_sprx(item->d_name)) continue;
+        if (!ends_with_prx(item->d_name)) continue;
         struct stat info{};
         char full_path[256]{};
         const int written = std::snprintf(full_path, sizeof(full_path),
@@ -195,7 +194,7 @@ std::size_t refresh_plugins(PluginEntry* entries, std::size_t capacity) {
         PluginEntry& entry = entries[count];
         std::memset(&entry, 0, sizeof(entry));
         std::strncpy(entry.filename, item->d_name, sizeof(entry.filename) - 1);
-        const std::size_t name_len = std::strlen(item->d_name) - 5;
+        const std::size_t name_len = std::strlen(item->d_name) - 4;
         const std::size_t copy_len = name_len < sizeof(entry.name) - 1
             ? name_len : sizeof(entry.name) - 1;
         for (std::size_t i = 0; i < copy_len; ++i) {
