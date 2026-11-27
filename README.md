@@ -19,11 +19,11 @@ The PRX's `plugin_unload` callback stops and joins its worker. GoldHEN loads con
 
 1. Load GoldHEN 14.02 and enable its **Plugin Loader** setting.
 2. Copy `Vypex-Cr_ck.prx` to `/data/Vypex-Cr_ck/plugins/Vypex-Cr_ck.prx` on the PS4.
-3. Launch the Vypex ELF UI and open **Plugins**. Enable Vypex-Cr_ck in the list; Vypex updates the `[default]` section of `/data/GoldHEN/plugins.ini`.
+3. Launch the Vypex ELF UI and open **Plugins** so it can detect `/data/Vypex-Cr_ck/plugins/Vypex-Cr_ck.prx`. On detection, Vypex adds `/data/Vypex-Cr_ck/plugins/Vypex-Cr_ck.prx=true` to GoldHEN's `[default]` section if no entry already exists. An existing explicit `=false` choice is respected.
 4. Close and relaunch an application/game so GoldHEN loads the configured PRX into that process.
 5. Open Vypex **Settings** to pause/resume the Vypex background service.
 
-Vypex backs up the original GoldHEN plugin configuration to `/data/GoldHEN/plugins.ini.vypex.bak` before its first modification and preserves unrelated title-ID sections.
+Vypex backs up the original GoldHEN plugin configuration to `/data/GoldHEN/plugins.ini.vypex.bak` before its first modification and preserves `[settings]` and unrelated title-ID sections. The `[default]` entry makes GoldHEN load the PRX for every subsequently launched title; GoldHEN Plugin Loader must be enabled, and the PRX must already be copied to the exact path above.
 
 ## Build
 
