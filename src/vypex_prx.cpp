@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <atomic>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,7 +19,7 @@ static const char *ENABLED_FILE = "/data/Vypex-Cr_ck/service.enabled";
 static const char *STATUS_FILE = "/data/Vypex-Cr_ck/service.status";
 
 static pthread_t g_worker;
-static volatile bool g_running = false;
+static std::atomic<bool> g_running{false};
 static bool g_worker_started = false;
 
 static bool service_enabled(void) {
@@ -40,7 +41,7 @@ static void write_status(const char *status) {
 static void *service_worker(void *unused) {
     (void)unused;
     bool last_enabled = false;
-    while (g_running) {
+    while (g_running.load()) {
         const bool enabled = service_enabled();
         if (enabled != last_enabled) {
             write_status(enabled ? "RUNNING" : "STOPPED_BY_USER");
@@ -53,7 +54,7 @@ static void *service_worker(void *unused) {
 
 static void stop_worker(void) {
     if (g_worker_started) {
-        g_running = false;
+        g_running.store(false);
         (void)pthread_join(g_worker, NULL);
         g_worker_started = false;
     }
@@ -64,7 +65,7 @@ int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
     (void)argc;
     (void)argv;
     (void)mkdir(ROOT, 0777);
-    g_running = true;
+    g_running.store(true);
     if (pthread_create(&g_worker, NULL, service_worker, NULL) != 0) {
         g_running = false;
         write_status("START_FAILED");
