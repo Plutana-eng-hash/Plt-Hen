@@ -14,11 +14,11 @@
 
 namespace {
 constexpr int W = 1920, H = 1080, BPP = 4, BUFFERS = 2;
-constexpr std::uint32_t PURPLE = 0xFF8B5CF6;
-constexpr std::uint32_t BG = 0xFF0B0B10, PANEL = 0xFF15151E;
-constexpr std::uint32_t CARD = 0xFF1D1D29, WHITE = 0xFFF4F1FA;
-constexpr std::uint32_t MUTED = 0xFF9995A8, GREEN = 0xFF55D69E;
-constexpr std::uint32_t AMBER = 0xFFF2C36B;
+constexpr std::uint32_t PURPLE = 0xFFE8EDF5;
+constexpr std::uint32_t BG = 0xFF05070B, PANEL = 0xFF0D1118;
+constexpr std::uint32_t CARD = 0xFF121923, WHITE = 0xFFF4F7FB;
+constexpr std::uint32_t MUTED = 0xFF929EAE, GREEN = 0xFF55D69E;
+constexpr std::uint32_t AMBER = 0xFFF2C36B;\nconstexpr std::uint32_t SNOW = 0xFFCBD5E1;
 
 static const std::uint8_t font[36][5] = {
  {0x7E,0x11,0x11,0x11,0x7E},{0x7F,0x49,0x49,0x49,0x36},{0x3E,0x41,0x41,0x41,0x22},
@@ -100,7 +100,7 @@ void card(int x,int y,int w,int h,const char* heading,const char* line1,const ch
  text(heading,x+28,y+25,3,WHITE); text(line1,x+28,y+82,2,MUTED);
  text(line2,x+28,y+119,2,status);
 }
-void outline(int x,int y,int w,int h,std::uint32_t color) {
+void draw_snow(int frame) {\n for(int i=0;i<58;++i) {\n  const int y=(i*83+frame*(1+(i%3)))%H;\n  const int x=(i*317+(frame/3)*(i%5+1))%W;\n  const int size=(i%9==0)?3:2;\n  rect(x,y,size,size,(i%4==0)?SNOW:0xFF7F8B9A);\n }\n}\nvoid outline(int x,int y,int w,int h,std::uint32_t color) {
  rect(x,y,w,3,color); rect(x,y+h-3,w,3,color);
  rect(x,y,3,h,color); rect(x+w-3,y,3,h,color);
 }
@@ -111,11 +111,11 @@ void home_tile(int x,int y,int w,int h,const char* title,const char* subtitle,
  if(focused) {
   const int pulse=static_cast<int>((frame/3)%40);
   outline(x-2-pulse/20,y-2-pulse/20,w+4+pulse/10,h+4+pulse/10,
-          (frame/12)%2?0xFFB69AFF:0xFF8B5CF6);
+          (frame/12)%2?0xFFC7D0DC:0xFFE8EDF5);
   rect(x+18,y+18,5,h-36,0xFFB69AFF);
  } else outline(x,y,w,h,0xFF383342);
  text(title,x+38,y+42,4,WHITE);
- text(subtitle,x+40,y+112,2,focused?0xFFE5D9FF:MUTED);
+ text(subtitle,x+40,y+112,2,focused?0xFFEAF0F8:MUTED);
 }
 
 bool vypex_service_enabled() {
@@ -135,7 +135,7 @@ void render_home(int selected,int frame) {
  rect(0,0,W,H,BG);
  // A restrained purple ambient wash, kept inside the app framebuffer.
  rect(0,0,W,5,0xFF8B5CF6);
- text("VYPEX",70,58,5,WHITE);
+ text("PLUTANA HEN",70,58,5,WHITE);
  text("YOUR CONSOLE  /  HOME",330,78,2,MUTED);
  text("14 02",1690,78,2,0xFFB69AFF);
  rect(70,132,1780,2,0xFF393143);
@@ -151,7 +151,7 @@ void render_home(int selected,int frame) {
  text("DPAD MOVE",110,902,2,MUTED);
  text("CROSS OPEN",430,902,2,0xFFE5D9FF);
  text("CIRCLE EXIT",750,902,2,MUTED);
- text("VYPEX CR CK",1510,902,2,0xFFB69AFF);
+ text("PLUTANA HEN",1510,902,2,0xFFC7D0DC);
  text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
 }
 void render(int page,int selected,const vypex::Config& cfg,
@@ -159,17 +159,17 @@ void render(int page,int selected,const vypex::Config& cfg,
             int plugin_selected,bool plugin_storage_ok,int frame) {
  rect(0,0,W,H,BG);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
- text("VYPEX CR CK",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
+ text("PLUTANA HEN",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
  text("FW PROFILE 14 02",1510,48,2,PURPLE);
  rect(0,112,390,H-112,PANEL);
  const char* names[]={"OVERVIEW","SYSTEM","CONTROLLERS","PLUGINS","SETTINGS","ABOUT"};
  for(int i=0;i<6;++i){
   int y=160+i*82;
-  if(i==page){rect(28,y-18,330,66,0xFF29213A);rect(28,y-18,5,66,PURPLE);}
+  if(i==page){rect(28,y-18,330,66,0xFF202A36);rect(28,y-18,5,66,PURPLE);}
   text(names[i],65,y,3,i==page?WHITE:MUTED);
  }
  text("CROSS SELECT",55,925,2,MUTED); text("CIRCLE BACK",55,965,2,MUTED);
- text("VYPEX BUILD 0 1",55,1030,2,PURPLE);
+ text("PLUTANA HEN  /  BUILD 0 1",55,1030,2,PURPLE);
  text(names[page],440,166,4,WHITE);
  text("PLAYSTATION 4  /  CONTROL PANEL",442,213,2,MUTED);
  if(page==0){
@@ -236,7 +236,7 @@ void render(int page,int selected,const vypex::Config& cfg,
  rect(390,1040,W-390,40,PANEL);
  text("DPAD NAVIGATE",430,1052,1,MUTED);
  text("CROSS SELECT",720,1052,1,MUTED);
- text("VYPEX",1740,1052,1,PURPLE);
+ text("PLUTANA HEN",1700,1052,1,PURPLE);
  (void)frame;
 }
 }
