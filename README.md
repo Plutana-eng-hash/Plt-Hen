@@ -1,33 +1,36 @@
 # Vypex-Cr_ck — native PS4 homebrew foundation
 
-Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02. It is **not** a browser application and is not a GoldHEN fork or rebrand.
+Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02. It is not a browser application, a GoldHEN fork, or a jailbreak implementation.
 
 ## Current build scope
 
-- Native C++ project built for the PS4 target with the OpenOrbis toolchain.
-- Purple Vypex identity and native framebuffer interface.
-- Controller input through the PS4 `scePad` API, polling up to four standard controller slots.
-- Controller disconnect handling and periodic reconnection attempts.
-- Controller status page in the interface.
-- Native PS4 plugin-library screen with D-pad selection, Cross enable/disable, and Triangle rescan.\n- Scans `/data/Vypex-Cr_ck/plugins` for `.sprx` files and persists enable flags in `/data/Vypex-Cr_ck/plugins.ini`.\n- Uses the PS4 filesystem and controller APIs directly for local discovery and interaction; plugin flags are configuration only.
-- Configuration parsing/serialization with safe defaults.
-- GitHub Actions builds a PS4-target ELF artifact and runs host-side tests.
+- Native C++ PS4 ELF built with the OpenOrbis toolchain.
+- Purple Vypex framebuffer interface and controller navigation.
+- PS4 controller input through the standard `scePad` interface.
+- Local discovery of `.sprx` files in `/data/Vypex-Cr_ck/plugins`.
+- Plugin toggles update GoldHEN's `/data/GoldHEN/plugins.ini` **[default]** section, preserving unrelated sections and creating a one-time backup at `plugins.ini.vypex.bak`.
+- GoldHEN plugin configuration is read back by Vypex so the UI reflects the configured enabled/disabled state.
+- Atomic temporary-file replacement is used when writing the GoldHEN plugin configuration.
+- Host-side configuration tests and a GitHub Actions PS4 ELF build.
+
+## GoldHEN 14.02 integration
+
+1. Load GoldHEN first and make sure its **Plugin Loader** option is enabled.
+2. Copy compatible, firmware-appropriate `.sprx` plugins into `/data/Vypex-Cr_ck/plugins/`.
+3. Start Vypex, open **Plugins**, and toggle entries with Cross.
+4. Vypex writes those entries into the **[default]** section of `/data/GoldHEN/plugins.ini`. Existing entries in other title-ID sections are retained.
+5. GoldHEN loads enabled entries when a title/application process starts. A configuration change does not retroactively load or unload a plugin already mapped into a running process; close and relaunch the affected title to apply it.
+
+Vypex currently manages GoldHEN's plugin configuration. It is **not itself a GoldHEN PRX**, does not start a resident Vypex daemon, and cannot unload a PRX already running in another process. The app's exit control only exits the Vypex UI. A true in-session Vypex service with a self-unload command requires a separately built and tested PRX using the GoldHEN plugin SDK and a defined service lifecycle; this repository does not claim that exists yet.
 
 ## Controller compatibility
 
-The application reads controllers that the PS4 operating system exposes through its standard `scePad` interface. This is not a universal USB/Bluetooth HID driver and it cannot pair unsupported controllers or impersonate a DualShock 4 at the console/system level.
-
-- DualShock 4 and other devices already recognized by the PS4 can be read by the app.
-- Xbox controllers and DualSense controllers are **not made PS4-compatible by this application**. Use a PS4-compatible hardware adapter/translator if you want to use one on the console; the adapter must present itself to the PS4 as a supported controller.
-- The controller status page reports the number of active standard controller slots. It does not identify every controller model or guarantee compatibility with every third-party device.
-- Multi-controller polling is implemented in source, but must still be tested on a physical PS4 and with each specific controller/adapter.
+The app reads controllers exposed by the PS4 through `scePad`. It does not install USB/Bluetooth drivers or convert an unsupported controller into a system-wide DualShock 4. Xbox and DualSense controllers require a PS4-compatible adapter/translator if the console does not already recognize them.
 
 ## Important limitations
 
-This repository does not currently contain a kernel exploit, firmware-specific kernel offsets, kernel patches, privilege escalation, or a PS4 system-shell replacement. Therefore it is **not a jailbreak/HEN** and cannot enable PRX loading or privileged plugin management by itself. Those features require a separately supplied, compatible privileged runtime. The build artifact is a native homebrew ELF, not an installable PKG.
+This repository does not contain a kernel exploit, firmware-specific kernel offsets, kernel patches, privilege escalation, or a PS4 system-shell replacement. It is a native user-mode homebrew app, not a jailbreak/HEN. The build artifact is an ELF, not an installable PKG.
 
-## Plugin manager\n\nCreate `/data/Vypex-Cr_ck/plugins` on the PS4 and copy compatible `.sprx` files there. Open **Plugins** in Vypex, use Up/Down to select a file, Cross to persist its enabled flag, and Triangle to rescan. The current build is a library/configuration manager only; enabled does not mean loaded or running.\n\n## Build
+## Build
 
-Push to `main` or run **Actions → Build Vypex-Cr_ck native**. Download the `Vypex-Cr_ck-PS4-ELF` artifact from the run.
-
-The workflow installs the OpenOrbis PS4 toolchain, compiles the target, and runs the host-side core tests.
+Push to `main` or run **Actions → Build Vypex-Cr_ck native**. Download the `Vypex-Cr_ck-PS4-ELF` artifact from a successful workflow run.
