@@ -11,11 +11,11 @@
 
 namespace {
 constexpr int W = 1920, H = 1080, BPP = 4, BUFFERS = 2;
-constexpr std::uint32_t PURPLE = 0xFF8B5CF6, PURPLE_DARK = 0xFF5B21B6;
+constexpr std::uint32_t PURPLE = 0xFF8B5CF6;
 constexpr std::uint32_t BG = 0xFF0B0B10, PANEL = 0xFF15151E;
 constexpr std::uint32_t CARD = 0xFF1D1D29, WHITE = 0xFFF4F1FA;
 constexpr std::uint32_t MUTED = 0xFF9995A8, GREEN = 0xFF55D69E;
-constexpr std::uint32_t AMBER = 0xFFF2C36B, RED = 0xFFFF7272;
+constexpr std::uint32_t AMBER = 0xFFF2C36B;
 
 static const std::uint8_t font[36][5] = {
  {0x7E,0x11,0x11,0x11,0x7E},{0x7F,0x49,0x49,0x49,0x36},{0x3E,0x41,0x41,0x41,0x22},
@@ -33,7 +33,9 @@ static const std::uint8_t font[36][5] = {
  {0x3E,0x49,0x49,0x49,0x32},{0x01,0x71,0x09,0x05,0x03},
  {0x36,0x49,0x49,0x49,0x36},{0x26,0x49,0x49,0x49,0x3E}
 };
-int video=-1, active=0, pad=-1, user=-1;
+constexpr int MAX_CONTROLLERS = 4;
+int video=-1, active=0, pads[MAX_CONTROLLERS]={-1,-1,-1,-1}, user=-1;
+int controller_count=0;
 void* mapped=nullptr; off_t mem_offset=0; size_t mem_size=0;
 char* fb[BUFFERS]={nullptr,nullptr}; OrbisKernelEqueue queue=0; bool allocated=false;
 int glyph(char c) {
@@ -100,9 +102,9 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
  text("VYPEX CR CK",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
  text("FW PROFILE 14 02",1510,48,2,PURPLE);
  rect(0,112,390,H-112,PANEL);
- const char* names[]={"OVERVIEW","SYSTEM","PLUGINS","SETTINGS","ABOUT"};
- for(int i=0;i<5;++i){
-  int y=190+i*92;
+ const char* names[]={"OVERVIEW","SYSTEM","CONTROLLERS","PLUGINS","SETTINGS","ABOUT"};
+ for(int i=0;i<6;++i){
+  int y=160+i*82;
   if(i==page){rect(28,y-18,330,66,0xFF29213A);rect(28,y-18,5,66,PURPLE);}
   text(names[i],65,y,3,i==page?WHITE:MUTED);
  }
@@ -122,10 +124,14 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
   card(440,495,1410,190,"RUNTIME","VYPEX NATIVE CORE","USER MODE APPLICATION",GREEN);
   card(440,715,1410,190,"FEATURE AVAILABILITY","DISPLAY AND CONTROLLER UI","NO KERNEL PATCH OR PAYLOAD LOADER",MUTED);
  } else if(page==2){
+  card(440,275,1410,190,"CONTROLLER INPUT","ACTIVE CONTROLLERS",controller_count?"CONTROLLER CONNECTED":"NO SUPPORTED CONTROLLER DETECTED",controller_count?GREEN:AMBER);
+  card(440,495,1410,190,"INPUT BACKEND","NATIVE SCEPAD API","UP TO FOUR PS4-RECOGNIZED CONTROLLERS",WHITE);
+  card(440,715,1410,190,"COMPATIBILITY","DUALSHOCK 4 AND OS-EXPOSED DEVICES","XBOX / DUALSENSE NEED A PS4-COMPATIBLE ADAPTER",AMBER);
+ } else if(page==3){
   card(440,275,1410,190,"PLUGIN REGISTRY","REGISTERED PLUGINS",plugins.count()?"ENTRIES ARE STORED IN THE LOCAL REGISTRY":"NO PLUGINS REGISTERED",WHITE);
   card(440,495,1410,190,"PLUGIN LOADING","STATUS  UNAVAILABLE","PRX LOADING NEEDS A PRIVILEGED RUNTIME",AMBER);
   card(440,715,1410,190,"SAFETY","NO FILES WILL BE LOADED","REGISTRY ONLY - NO EXECUTION BACKEND",MUTED);
- } else if(page==3){
+ } else if(page==4){
   const char* opts[]={"BLOCK SYSTEM UPDATES","SHOW NOTIFICATIONS","PLUGIN AUTOLOAD"};
   const bool vals[]={cfg.block_updates,cfg.show_notifications,cfg.plugin_autoload};
   for(int i=0;i<3;++i){
@@ -156,24 +162,46 @@ int main() {
  const bool user_ok=sceUserServiceInitialize(&params)==0;
  if(user_ok)sceUserServiceGetInitialUser(&user);
  const bool pad_ok=scePadInit()==0;
- if(pad_ok&&user>=0)pad=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,0,nullptr);
+ if(pad_ok&&user>=0){
+  for(int i=0;i<MAX_CONTROLLERS;++i){
+   pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
+   if(pads[i]>=0)++controller_count;
+  }
+ }
  if(!graphics_init()){
   sceKernelDebugOutText(0,"Vypex: native display initialization failed\n");
-  graphics_end(); if(pad>=0)scePadClose(pad); if(user_ok)sceUserServiceTerminate(); return 1;
+  graphics_end();
+  for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]);
+  if(pad_ok)scePadTerminate();
+  if(user_ok)sceUserServiceTerminate();
+  return 1;
  }
  int page=0,selected=0; std::int64_t frame=1; std::uint32_t previous=0;
  bool running=true;
  while(running){
-  OrbisPadData data={};
-  if(pad>=0)scePadReadState(pad,&data);
-  const std::uint32_t now=data.connected?data.buttons:0;
+  std::uint32_t now=0;
+  controller_count=0;
+  for(int i=0;i<MAX_CONTROLLERS;++i){
+   if(pads[i]<0)continue;
+   OrbisPadData current={};
+   if(scePadRead(pads[i],&current,1)==0&&current.connected){
+    ++controller_count;
+    if(now==0)now=current.buttons;
+   } else {
+    scePadClose(pads[i]); pads[i]=-1;
+   }
+  }
+  if((frame%120)==0&&user>=0){
+   for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]<0)
+    pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
+  }
   const std::uint32_t pressed=now&~previous; previous=now;
-  if(pressed&ORBIS_PAD_BUTTON_UP){if(page==3)selected=(selected+2)%3;else page=(page+4)%5;}
-  if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==3)selected=(selected+1)%3;else page=(page+1)%5;}
-  if(pressed&ORBIS_PAD_BUTTON_LEFT)page=(page+4)%5;
-  if(pressed&ORBIS_PAD_BUTTON_RIGHT)page=(page+1)%5;
+  if(pressed&ORBIS_PAD_BUTTON_UP){if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_LEFT)page=(page+5)%6;
+  if(pressed&ORBIS_PAD_BUTTON_RIGHT)page=(page+1)%6;
   if(pressed&ORBIS_PAD_BUTTON_CROSS){
-   if(page==3){
+   if(page==4){
     if(selected==0)config.block_updates=!config.block_updates;
     if(selected==1)config.show_notifications=!config.show_notifications;
     if(selected==2)config.plugin_autoload=!config.plugin_autoload;
@@ -183,6 +211,6 @@ int main() {
   render(page,selected,config,plugins,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
- graphics_end(); if(pad>=0)scePadClose(pad); if(pad_ok)scePadTerminate(); if(user_ok)sceUserServiceTerminate();
+ graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(pad_ok)scePadTerminate(); if(user_ok)sceUserServiceTerminate();
  return 0;
 }
