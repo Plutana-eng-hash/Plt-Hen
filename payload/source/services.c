@@ -131,7 +131,7 @@ static int ftp_data_accept(int passive_socket) {
 }
 
 static void ftp_list(int control, int passive, const char *path) {
-    send_text(control, "150 Opening data connection.\\r\\n");
+    send_text(control, "150 Opening data connection.\r\n");
     int data = ftp_data_accept(passive);
     if (data < 0) {
         send_text(control, "425 Cannot open data connection.\r\n");
@@ -143,7 +143,6 @@ static void ftp_list(int control, int passive, const char *path) {
         sceNetSocketClose(data);
         return;
     }
-    send_text(control, "150 Opening data connection.\r\n");
     struct dirent *entry;
     char line[320];
     while ((entry = readdir(dir)) != NULL) {
@@ -162,14 +161,13 @@ static void ftp_retr(int control, int passive, const char *path) {
         sceNetSocketClose(passive);
         return;
     }
-    send_text(control, "150 Opening binary data connection.\\r\\n");
+    send_text(control, "150 Opening binary data connection.\r\n");
     int data = ftp_data_accept(passive);
     if (data < 0) {
         close(fd);
         send_text(control, "425 Cannot open data connection.\r\n");
         return;
     }
-    send_text(control, "150 Opening binary data connection.\r\n");
     char buffer[8192];
     ssize_t n;
     while ((n = read(fd, buffer, sizeof(buffer))) > 0) {
@@ -187,13 +185,13 @@ static void ftp_stor(int control, int passive, const char *path) {
         sceNetSocketClose(passive);
         return;
     }
+    send_text(control, "150 Ready to receive file.\r\n");
     int data = ftp_data_accept(passive);
     if (data < 0) {
         close(fd);
         send_text(control, "425 Cannot open data connection.\r\n");
         return;
     }
-    send_text(control, "150 Ready to receive file.\r\n");
     char buffer[8192];
     int n;
     while ((n = sceNetRecv(data, buffer, sizeof(buffer), 0)) > 0) {
@@ -216,9 +214,11 @@ static void ftp_client(int control) {
         (void)sscanf(line, "%15s %383[^\r\n]", command, argument);
 
         if (!strcmp(command, "USER")) {
+            user_ok = !strcmp(argument, FTP_USER);
+            authenticated = 0;
             send_text(control, "331 Password required.\r\n");
         } else if (!strcmp(command, "PASS")) {
-            authenticated = !strcmp(argument, FTP_PASS);
+            authenticated = user_ok && !strcmp(argument, FTP_PASS);
             if (authenticated) send_text(control, "230 Login successful.\r\n");
             else send_text(control, "530 Login incorrect.\r\n");
         } else if (!strcmp(command, "QUIT")) {
