@@ -1,0 +1,43 @@
+name: Plutana-HEN payload build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plutana-hen-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build 14.02 HEN payload
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out project and pinned HEN source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential binutils gcc make curl unzip xxd git
+
+      - name: Verify source and build payload
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/build-payload.sh
+
+      - name: Upload payload and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: Plutana-HEN-14.02
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
