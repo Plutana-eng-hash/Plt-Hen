@@ -13,6 +13,9 @@ SFILES := $(wildcard $(SDIR)/*.s)
 OBJS := $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(CFILES)) $(patsubst $(SDIR)/%.s,$(ODIR)/%.o,$(SFILES))
 TARGET := Plutana-HEN.bin
 
+.PHONY: all clean
+all: $(TARGET)
+
 $(TARGET): $(ODIR) $(OBJS)
 	$(CC) $(LIBPS4)/crt0.s $(OBJS) -o temp.elf $(CFLAGS) $(LFLAGS) -lPS4
 	$(OBJCOPY) -O binary temp.elf $@
