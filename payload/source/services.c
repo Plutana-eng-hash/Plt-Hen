@@ -105,7 +105,10 @@ static int ftp_path(const char *cwd, const char *arg, char *out, size_t out_size
     size_t used = 0;
     if (!arg || !arg[0]) arg = ".";
 
-    if (strstr(arg, "..") || strchr(arg, '\\')) return -1;
+    for (size_t i = 0; arg[i] && arg[i + 1]; ++i) {
+        if (arg[i] == '.' && arg[i + 1] == '.') return -1;
+    }
+    if (strchr(arg, '\\')) return -1;
     if (arg[0] == '/') {
         arg++;
     } else if (cwd && cwd[0]) {
