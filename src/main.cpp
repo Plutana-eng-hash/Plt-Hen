@@ -100,7 +100,14 @@ void card(int x,int y,int w,int h,const char* heading,const char* line1,const ch
  text(heading,x+28,y+25,3,WHITE); text(line1,x+28,y+82,2,MUTED);
  text(line2,x+28,y+119,2,status);
 }
-void draw_snow(int frame) {\n for(int i=0;i<58;++i) {\n  const int y=(i*83+frame*(1+(i%3)))%H;\n  const int x=(i*317+(frame/3)*(i%5+1))%W;\n  const int size=(i%9==0)?3:2;\n  rect(x,y,size,size,(i%4==0)?SNOW:0xFF7F8B9A);\n }\n}\nvoid outline(int x,int y,int w,int h,std::uint32_t color) {
+void draw_snow(int frame) {
+ for(int i=0;i<58;++i) {
+  const int y=(i*83+frame*(1+(i%3)))%H;
+  const int x=(i*317+(frame/3)*(i%5+1))%W;
+  const int size=(i%9==0)?3:2;
+  rect(x,y,size,size,(i%4==0)?SNOW:0xFF7F8B9A);
+ }
+}\nvoid outline(int x,int y,int w,int h,std::uint32_t color) {
  rect(x,y,w,3,color); rect(x,y+h-3,w,3,color);
  rect(x,y,3,h,color); rect(x+w-3,y,3,h,color);
 }
