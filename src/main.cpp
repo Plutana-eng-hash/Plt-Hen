@@ -97,6 +97,46 @@ void card(int x,int y,int w,int h,const char* heading,const char* line1,const ch
  text(heading,x+28,y+25,3,WHITE); text(line1,x+28,y+82,2,MUTED);
  text(line2,x+28,y+119,2,status);
 }
+void outline(int x,int y,int w,int h,std::uint32_t color) {
+ rect(x,y,w,3,color); rect(x,y+h-3,w,3,color);
+ rect(x,y,3,h,color); rect(x+w-3,y,3,h,color);
+}
+void home_tile(int x,int y,int w,int h,const char* title,const char* subtitle,
+               bool focused,int frame) {
+ const std::uint32_t glass=focused?0xFF242033:0xFF171720;
+ rect(x,y,w,h,glass);
+ if(focused) {
+  const int pulse=static_cast<int>((frame/3)%40);
+  outline(x-2-pulse/20,y-2-pulse/20,w+4+pulse/10,h+4+pulse/10,
+          (frame/12)%2?0xFFB69AFF:0xFF8B5CF6);
+  rect(x+18,y+18,5,h-36,0xFFB69AFF);
+ } else outline(x,y,w,h,0xFF383342);
+ text(title,x+38,y+42,4,WHITE);
+ text(subtitle,x+40,y+112,2,focused?0xFFE5D9FF:MUTED);
+}
+void render_home(int selected,int frame) {
+ rect(0,0,W,H,BG);
+ // A restrained purple ambient wash, kept inside the app framebuffer.
+ rect(0,0,W,5,0xFF8B5CF6);
+ text("VYPEX",70,58,5,WHITE);
+ text("YOUR CONSOLE  /  HOME",330,78,2,MUTED);
+ text("14 02",1690,78,2,0xFFB69AFF);
+ rect(70,132,1780,2,0xFF393143);
+ text("WELCOME BACK",80,180,3,WHITE);
+ text("A CLEANER HOME FOR YOUR PS4",80,226,2,MUTED);
+ const int xs[3]={80,665,1250};
+ const int ys[2]={300,575};
+ const char* titles[6]={"GAMES","HOMEBREW","PACKAGES","CONTROLLERS","PLUGINS","SETTINGS"};
+ const char* subs[6]={"YOUR GAME LIBRARY","HOME BREW TOOLS","PACKAGE FILE BROWSER",
+                      "INPUT AND MAPPING","PLUGIN REGISTRY","PERSONALIZE VYPEX"};
+ for(int i=0;i<6;++i) home_tile(xs[i%3],ys[i/3],520,220,titles[i],subs[i],selected==i,frame);
+ rect(80,865,1760,105,0xFF17151F);
+ text("DPAD MOVE",110,902,2,MUTED);
+ text("CROSS OPEN",430,902,2,0xFFE5D9FF);
+ text("CIRCLE EXIT",750,902,2,MUTED);
+ text("VYPEX CR CK",1510,902,2,0xFFB69AFF);
+ text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
+}
 void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,int frame) {
  rect(0,0,W,H,BG);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
@@ -196,10 +236,10 @@ int main() {
     pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
   }
   const std::uint32_t pressed=now&~previous; previous=now;
-  if(pressed&ORBIS_PAD_BUTTON_UP){if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
-  if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
-  if(pressed&ORBIS_PAD_BUTTON_LEFT)page=(page+5)%6;
-  if(pressed&ORBIS_PAD_BUTTON_RIGHT)page=(page+1)%6;
+  if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
+  if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_CROSS){
    if(page==4){
     if(selected==0)config.block_updates=!config.block_updates;
@@ -208,7 +248,7 @@ int main() {
    }
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
-  render(page,selected,config,plugins,static_cast<int>(frame));
+  if(page==0) render_home(selected,static_cast<int>(frame));\n  else render(page,selected,config,plugins,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
  graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
