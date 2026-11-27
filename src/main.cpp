@@ -159,7 +159,7 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
  if(page==0){
   card(440,275,690,220,"HEN RUNTIME","STATUS  NOT LOADED","THIS APP DOES NOT ENABLE JAILBREAK",AMBER);
   card(1160,275,690,220,"FIRMWARE PROFILE","TARGET  14 02","KERNEL PATCHES  NOT PRESENT",AMBER);
-  card(440,530,690,220,"PLUGIN MANAGER","REGISTERED ENTRIES",plugins.count()?"PLUGIN RECORDS AVAILABLE":"NO PLUGINS REGISTERED",WHITE);
+  card(440,530,690,220,"PLUGIN MANAGER","REGISTERED ENTRIES",plugin_count?"PLUGINS FOUND":"NO PLUGINS FOUND",WHITE);
   card(1160,530,690,220,"CONFIGURATION","UPDATE BLOCKING",cfg.block_updates?"ENABLED":"DISABLED",cfg.block_updates?GREEN:MUTED);
   text("THIS IS THE NATIVE VYPEX USER MODE INTERFACE",445,830,2,MUTED);
   text("PRIVILEGED HEN FEATURES REQUIRE A SEPARATE COMPATIBLE RUNTIME",445,870,2,AMBER);
@@ -226,7 +226,7 @@ int main() {
  vypex::Config config=vypex::Config::defaults();
  vypex::PluginRegistry plugins;
  vypex::PluginEntry plugin_items[MAX_PLUGINS]{};\n std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
- const bool plugin_storage_ok=vypex::plugin_storage_ready();
+ bool plugin_storage_ok=vypex::plugin_storage_ready();
  OrbisUserServiceInitializeParams params={};
  params.priority=ORBIS_KERNEL_PRIO_FIFO_LOWEST;
  const bool user_ok=sceUserServiceInitialize(&params)==0;
@@ -265,8 +265,8 @@ int main() {
     pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
   }
   const std::uint32_t pressed=now&~previous; previous=now;
-  if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)selected=(selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
-  if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)selected=(selected+1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)plugin_selected=(plugin_selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)plugin_selected=(plugin_selected+1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
   if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_TRIANGLE && page==3){
@@ -286,7 +286,7 @@ int main() {
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
   if(page==0) render_home(selected,static_cast<int>(frame));
-  else render(page,selected,config,plugins,plugin_items,plugin_count,plugin_selected,plugin_storage_ok,static_cast<int>(frame));
+  else render(page,selected,config,plugin_items,plugin_count,plugin_selected,plugin_storage_ok,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
  graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
