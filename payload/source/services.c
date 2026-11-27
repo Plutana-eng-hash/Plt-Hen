@@ -131,6 +131,7 @@ static int ftp_data_accept(int passive_socket) {
 }
 
 static void ftp_list(int control, int passive, const char *path) {
+    send_text(control, "150 Opening data connection.\\r\\n");
     int data = ftp_data_accept(passive);
     if (data < 0) {
         send_text(control, "425 Cannot open data connection.\r\n");
@@ -161,6 +162,7 @@ static void ftp_retr(int control, int passive, const char *path) {
         sceNetSocketClose(passive);
         return;
     }
+    send_text(control, "150 Opening binary data connection.\\r\\n");
     int data = ftp_data_accept(passive);
     if (data < 0) {
         close(fd);
@@ -205,6 +207,7 @@ static void ftp_stor(int control, int passive, const char *path) {
 static void ftp_client(int control) {
     char line[512], command[16], argument[384], cwd[192] = "";
     int authenticated = 0;
+    int user_ok = 0;
     int passive = -1;
     send_text(control, "220 Plutana-HEN FTP service ready.\r\n");
 
@@ -371,7 +374,7 @@ static void *klog_worker(void *unused) {
 int plutana_services_start(void) {
     if (!g_net_ready) {
         initNetwork();
-        if (!libNet || !sceNetSocket || !sceNetBind || !sceNetListen ||
+        if (!sceNetSocket || !sceNetBind || !sceNetListen ||
             !sceNetAccept || !sceNetSend || !sceNetRecv) {
             log_write("ERROR", "libSceNet exports unavailable; services not started.");
             return -1;
