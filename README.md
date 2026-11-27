@@ -1,24 +1,21 @@
-# Vypex-Cr_ck — Control Center
+# Vypex-Cr_ck — native PS4 homebrew foundation
 
-A purple-first, responsive homebrew workspace interface with its own visual identity. It is an independent interface project, not a GoldHEN fork or rebrand.
+Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02. It is **not** a browser application and is not a GoldHEN fork or rebrand.
 
-## Included
-- Responsive dark/purple dashboard and navigation
-- Plugin-entry library with add, edit, remove, and search
-- Browser-local preferences and persistence
-- Firmware target label (informational only)
-- Accessible form labels, keyboard-friendly controls, and status feedback
+## Current build scope
 
-## Run locally
-Open `index.html` in a modern browser. No build dependencies are required.
+- Native C++ project built for the PS4 target with the OpenOrbis toolchain.
+- Purple Vypex identity and a small native runtime/status core.
+- Plugin registry model (metadata, enable/disable state, validation and listing).
+- Configuration parsing/serialization with safe defaults.
+- GitHub Actions builds a PS4-target ELF artifact and runs host-side tests.
+
+## Important limitations
+
+This repository does not currently contain a kernel exploit, firmware-specific kernel offsets, kernel patches, privilege escalation, or a PS4 system-shell replacement. Therefore it is **not a jailbreak/HEN** and cannot enable PRX loading or privileged plugin management by itself. Those features require a separately supplied, compatible privileged runtime. The build artifact is a native homebrew ELF, not an installable PKG.
 
 ## Build
-The GitHub Actions workflow validates the JavaScript and required assets, then packages:
-`Vypex-Cr_ck-Interface.zip`
 
-Download it from the **Actions → Build Vypex-Cr_ck interface → Artifacts** section.
+Push to `main` or run **Actions → Build Vypex-Cr_ck native**. Download the `Vypex-Cr_ck-PS4-ELF` artifact from the run.
 
-## Important scope
-This repository currently builds the Vypex-Cr_ck interface only. It does **not** include a PS4 jailbreak, kernel exploit, firmware offsets, kernel patches, a PRX loader, or native PS4 system-menu integration. The plugin library stores local reference entries in the browser; it does not install or load plugins on a console. The displayed firmware target is a label, not live hardware detection.
-
-The project is not affiliated with GoldHEN. It uses an original Vypex visual design rather than copying GoldHEN assets or claiming its functionality.
+The workflow installs the OpenOrbis PS4 toolchain, compiles the target, and runs the host-side core tests.
