@@ -12,8 +12,8 @@ done
 [[ -f "$GH_SDK/Makefile" ]] || { echo "GoldHEN SDK Makefile missing" >&2; exit 2; }
 make -C "$GH_SDK" clean all OO_PS4_TOOLCHAIN="$TOOLCHAIN"
 TARGET="x86_64-pc-freebsd12-elf"
-COMMON=(--target="$TARGET" -fPIC -funwind-tables -O2 -Wall -Wextra -Werror
-  -isysroot "$TOOLCHAIN" -isystem "$TOOLCHAIN/include" -I"$GH_SDK/include")
+COMMON=(--target="$TARGET" -std=c++17 -fPIC -funwind-tables -O2 -Wall -Wextra -Werror
+  -isysroot "$TOOLCHAIN" -isystem "$TOOLCHAIN/include" -isystem "$TOOLCHAIN/include/c++/v1" -I"$GH_SDK/include")
 clang++ "${COMMON[@]}" -c src/vypex_prx.cpp -o "$BUILD_DIR/vypex_prx.o"
 ld.lld -m elf_x86_64 -pie --script "$TOOLCHAIN/link.x" -e _init --eh-frame-hdr \
   -L"$TOOLCHAIN/lib" -L"$GH_SDK" "$GH_SDK/build/crtprx.o" "$BUILD_DIR/vypex_prx.o" \
