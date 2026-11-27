@@ -153,9 +153,9 @@ void render_home(int selected,int frame) {
  text("A CLEANER HOME FOR YOUR PS4",80,226,2,MUTED);
  const int xs[3]={80,665,1250};
  const int ys[2]={300,575};
- const char* titles[6]={"GAMES","HOMEBREW","PACKAGES","CONTROLLERS","PLUGINS","SETTINGS"};
- const char* subs[6]={"YOUR GAME LIBRARY","HOME BREW TOOLS","PACKAGE FILE BROWSER",
-                      "INPUT AND MAPPING","PLUGIN REGISTRY","PERSONALIZE VYPEX"};
+ const char* titles[6]={"OVERVIEW","SYSTEM","CONTROLLERS","PLUGINS","SETTINGS","ABOUT"};
+ const char* subs[6]={"CONSOLE DASHBOARD","FIRMWARE AND RUNTIME","CONTROLLER STATUS",
+                      "PLUGIN CONFIGURATION","APP PREFERENCES","BUILD INFORMATION"};
  for(int i=0;i<6;++i) home_tile(xs[i%3],ys[i/3],520,220,titles[i],subs[i],selected==i,frame);
  rect(80,865,1760,105,0xFF17151F);
  text("DPAD MOVE",110,902,2,MUTED);
@@ -307,7 +307,8 @@ int main() {
    if(plugin_count==0)plugin_selected=0;else if(plugin_selected>=static_cast<int>(plugin_count))plugin_selected=static_cast<int>(plugin_count)-1;
   }
   if(pressed&ORBIS_PAD_BUTTON_CROSS){
-   if(page==3 && plugin_count){
+   if(page==0){ if(selected>0) page=selected; }
+   else if(page==3 && plugin_count){
     const std::size_t idx=static_cast<std::size_t>(plugin_selected);
     vypex::set_plugin_enabled(plugin_items,plugin_count,idx,!plugin_items[idx].enabled);
    }
