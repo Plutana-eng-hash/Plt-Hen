@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090711">
+  <meta name="description" content="Vypex-Cr_ck homebrew control center interface.">
+  <title>Vypex-Cr_ck — Control Center</title>
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Vypex home">
+        <span class="brand-mark">V<span>×</span></span>
+        <span class="brand-copy"><strong>Vypex-Cr_ck</strong><small>CONTROL CENTER</small></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">◈</span> Overview <kbd>01</kbd></button>
+        <button class="nav-item" data-view="plugins"><span class="nav-icon">▦</span> Plugins <kbd>02</kbd></button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span> Settings <kbd>03</kbd></button>
+        <button class="nav-item" data-view="about"><span class="nav-icon">ⓘ</span> About <kbd>04</kbd></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="connection"><span class="pulse"></span><span><b>Interface ready</b><small>Local workspace</small></span></div>
+        <div class="sidebar-version">VYPEX UI <span>0.2.0</span></div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb"><span>VYPEX</span><i>/</i><b id="crumb-current">OVERVIEW</b></div>
+        <div class="top-actions"><span class="local-tag"><span></span> LOCAL MODE</span><button class="icon-button" id="help-btn" aria-label="Show information">?</button><div class="avatar">V</div></div>
+      </header>
+      <section class="page active" id="view-overview">
+        <div class="welcome-row"><div><div class="eyebrow"><span class="eyebrow-line"></span> YOUR CONSOLE WORKSPACE</div><h1>Control <em>everything.</em></h1><p class="subhead">A cleaner home for your homebrew tools and preferences.</p></div><div class="date-chip"><span class="date-dot"></span> VYPEX INTERFACE <b>0.2.0</b></div></div>
+        <div class="hero-card">
+          <div class="hero-grid"></div><div class="hero-content"><div class="hero-pill"><span></span> PERSONAL CONTROL CENTER</div><h2>Make your setup<br><em>your own.</em></h2><p>Keep your homebrew workspace organized with a focused, low-clutter interface.</p><button class="primary-btn" data-go="plugins">Manage plugins <span>↗</span></button></div>
+          <div class="hero-orb"><div class="orb-ring ring-one"></div><div class="orb-ring ring-two"></div><div class="orb-core">V<span>×</span></div><div class="orb-caption">VYPEX<br>CORE</div></div>
+          <div class="hero-index">01 <span>/</span> 04</div>
+        </div>
+        <div class="section-heading"><div><div class="eyebrow">AT A GLANCE</div><h3>Workspace overview</h3></div><span class="muted-label">LOCAL PROFILE</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon violet">▦</span><span class="stat-kicker">PLUGIN LIST</span></div><strong id="plugin-count">03</strong><p>Saved entries</p><div class="stat-foot"><span class="mini-bar"><i style="width:62%"></i></span><span>Local only</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon mint">✓</span><span class="stat-kicker">PREFERENCES</span></div><strong id="setting-count">04</strong><p>Configurable options</p><div class="stat-foot"><span class="status-word">● Saved in browser</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span class="stat-icon amber">◇</span><span class="stat-kicker">FIRMWARE</span></div><strong class="stat-text">14.02</strong><p>Profile target label</p><div class="stat-foot"><span class="status-word muted">Not console-detected</span></div></article>
+        </div>
+        <div class="bottom-grid">
+          <article class="panel quick-panel"><div class="panel-head"><div><div class="eyebrow">SHORTCUTS</div><h3>Quick access</h3></div><span class="panel-mark">✳</span></div><button class="quick-link" data-go="plugins"><span class="quick-icon">▦</span><span><b>Plugin library</b><small>Organize your saved plugin entries</small></span><span class="arrow">↗</span></button><button class="quick-link" data-go="settings"><span class="quick-icon">⚙</span><span><b>Preferences</b><small>Adjust your local interface settings</small></span><span class="arrow">↗</span></button></article>
+          <article class="panel notice-panel"><div class="panel-head"><div><div class="eyebrow">PROJECT STATUS</div><h3>Know what is active</h3></div><span class="notice-icon">!</span></div><p>This build is the Vypex-Cr_ck interface and local workspace. It does not exploit the console, patch the kernel, or load PS4 PRX plugins.</p><a href="#" data-go="about">Read project details <span>→</span></a></article>
+        </div>
+      </section>
+      <section class="page" id="view-plugins">
+        <div class="page-title"><div class="eyebrow"><span class="eyebrow-line"></span> WORKSPACE / LIBRARY</div><h1>Plugin <em>library.</em></h1><p class="subhead">Keep track of plugin files and notes in one place.</p></div>
+        <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="plugin-search" type="search" placeholder="Search saved plugins..." aria-label="Search plugins"></div><button class="primary-btn" id="add-plugin">＋ Add entry</button></div>
+        <div class="plugin-grid" id="plugin-list"></div>
+        <div class="inline-note"><span>ⓘ</span> Entries are stored in this browser only. This screen does not install or load PRX files on a PS4.</div>
+      </section>
+      <section class="page" id="view-settings">
+        <div class="page-title"><div class="eyebrow"><span class="eyebrow-line"></span> WORKSPACE / PREFERENCES</div><h1>Your <em>preferences.</em></h1><p class="subhead">Tune the interface to the way you like to work.</p></div>
+        <div class="settings-layout"><div class="settings-group"><div class="panel-head"><div><div class="eyebrow">DISPLAY</div><h3>Interface</h3></div></div>
+          <label class="setting-row"><span><b>Compact cards</b><small>Reduce spacing in library cards</small></span><input type="checkbox" data-setting="compact"></label>
+          <label class="setting-row"><span><b>Motion effects</b><small>Enable subtle interface transitions</small></span><input type="checkbox" data-setting="motion" checked></label>
+          <label class="setting-row"><span><b>Desktop notifications</b><small>Show workspace feedback messages</small></span><input type="checkbox" data-setting="notifications" checked></label>
+          <label class="setting-row"><span><b>Remember this browser</b><small>Save local entries and preferences</small></span><input type="checkbox" data-setting="remember" checked></label>
+        </div><div class="settings-group profile-box"><div class="eyebrow">PROFILE</div><h3>Vypex-Cr_ck</h3><p>Interface version <b>0.2.0</b></p><p>Target profile <b>PS4 · 14.02</b></p><p class="tiny-muted">The firmware label is informational. No console connection is active.</p><button class="secondary-btn" id="reset-settings">Reset preferences</button></div></div>
+      </section>
+      <section class="page" id="view-about">
+        <div class="page-title"><div class="eyebrow"><span class="eyebrow-line"></span> PROJECT / INFORMATION</div><h1>Built with <em>purpose.</em></h1><p class="subhead">A distinct Vypex workspace with a purple-first visual identity.</p></div>
+        <div class="about-hero"><div class="about-logo">V<span>×</span></div><div><div class="eyebrow">VYPEX-Cr_ck</div><h2>Control Center <span>0.2.0</span></h2><p>Independent interface design. Not affiliated with or a copy of GoldHEN.</p></div></div>
+        <div class="about-grid"><article class="panel"><div class="eyebrow">WHAT THIS BUILD DOES</div><h3>Local workspace</h3><p>Provides navigation, saved plugin records, preference controls, and a responsive dashboard.</p></article><article class="panel"><div class="eyebrow">WHAT THIS BUILD DOES NOT DO</div><h3>No console payload</h3><p>It does not contain a jailbreak, kernel offsets, privilege escalation, a PS4 plugin loader, or PS4 system-menu integration.</p></article></div>
+      </section>
+      <footer class="footer"><span>VYPEX-Cr_CK <b>·</b> MADE FOR YOUR WORKSPACE</span><span>LOCAL INTERFACE BUILD <b>0.2.0</b></span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="plugin-dialog"><form method="dialog" id="plugin-form"><div class="dialog-top"><div><div class="eyebrow">PLUGIN LIBRARY</div><h3>Add an entry</h3></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div><label>Plugin name<input id="plugin-name" maxlength="40" required placeholder="Example: My homebrew tool"></label><label>File name or reference<input id="plugin-file" maxlength="90" placeholder="plugin.prx or a note"></label><label>Notes<textarea id="plugin-notes" maxlength="180" placeholder="What is this entry for?"></textarea></label><div class="dialog-actions"><button class="secondary-btn" value="cancel">Cancel</button><button class="primary-btn" id="save-plugin" value="default">Save entry</button></div></form></dialog>
+  <script src="assets/app.js"></script>
+</body></html>
