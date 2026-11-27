@@ -1,4 +1,4 @@
-name: Build Plt-Hen native, PRX, and payload
+name: Build Plutana-HEN single BIN
 on:
   push:
     branches: [main, payload-bin-14.02]
@@ -45,7 +45,7 @@ jobs:
       - name: Upload raw PS4 payload
         uses: actions/upload-artifact@v4
         with:
-          name: Plutana-HEN-PS4-14.02-BIN
+          name: Plutana-HEN-ONE-BIN
           path: payload/Plutana-HEN.bin
           if-no-files-found: error
           retention-days: 30
