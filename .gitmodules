@@ -1,0 +1,3 @@
+[submodule "vendor/ps4-hen"]
+	path = vendor/ps4-hen
+	url = https://github.com/Scene-Collective/PS4-HEN.git
