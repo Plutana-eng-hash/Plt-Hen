@@ -226,7 +226,8 @@ void render(int page,int selected,const vypex::Config& cfg,
 int main() {
  vypex::Config config=vypex::Config::defaults();
  vypex::PluginRegistry plugins;
- vypex::PluginEntry plugin_items[MAX_PLUGINS]{};\n std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
+ vypex::PluginEntry plugin_items[MAX_PLUGINS]{};
+ std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
  bool plugin_storage_ok=vypex::plugin_storage_ready();
  OrbisUserServiceInitializeParams params={};
  params.priority=ORBIS_KERNEL_PRIO_FIFO_LOWEST;
@@ -266,11 +267,14 @@ int main() {
     pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
   }
   const std::uint32_t pressed=now&~previous; previous=now;
-  if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)plugin_selected=(plugin_selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
-  if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)plugin_selected=(plugin_selected+1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)plugin_selected=(plugin_selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}
+  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)plugin_selected=(plugin_selected+1)%static_cast<int>(plugin_count);}
+  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
   if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_TRIANGLE && page==3){
+   plugin_storage_ok=vypex::plugin_storage_ready();
    plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);
    if(plugin_count==0)plugin_selected=0;else if(plugin_selected>=static_cast<int>(plugin_count))plugin_selected=static_cast<int>(plugin_count)-1;
   }
