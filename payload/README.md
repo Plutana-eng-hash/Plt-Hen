@@ -1,4 +1,4 @@
-# Plutana-HEN payload target (PS4 14.02)
+# Plutana-HEN raw payload target (PS4 14.02)
 
 This directory builds a raw PS4 payload binary using the 14.02-enabled
 [iHaiDeeZ PS4 Payload SDK](https://github.com/iHaiDeeZ/ps4-payload-sdk).
@@ -8,28 +8,31 @@ This directory builds a raw PS4 payload binary using the 14.02-enabled
 `Plutana-HEN.bin` is emitted by the SDK linker script and `objcopy -O binary`.
 It is a raw payload, not an ELF, PRX, EBOOT, or PKG.
 
-## Current payload behavior
+## Responsibility split
 
-- Verifies that the running console reports firmware 14.02.
-- Requires an already privileged / jailbroken runtime; it does not contain a
-  firmware exploit or kernel patch chain.
-- Loads the PS4 controller module and provides a small notification-based
-  controller menu (D-pad, Cross, Circle).
-- Displays status and build information through PS4 system notifications.
+- `Plutana-HEN.bin` is a small payload-stage bootstrap. It verifies firmware
+  14.02 and checks that a privileged session is already active.
+- The actual controller-driven graphical menu is the native OpenOrbis app
+  built from `src/main.cpp`. It draws through the PS4 VideoOut framebuffer,
+  supports D-pad/Cross/Circle navigation, and contains the Games, Homebrew,
+  Packages, Controllers, Plugins, Settings, and About sections.
+- The graphical app is a separately launched user-mode application. The raw
+  payload does not pretend to be a shell overlay and does not show a fake
+  notification-based menu.
 
-This is deliberately separate from GoldHEN's plugin ABI. The payload SDK's
-14.02 fork currently leaves its generic `jailbreak()` helper as a no-op for
-14.02 because the required prison/rootvnode offsets are not resolved there.
-Therefore this payload does not claim to jailbreak a stock or merely exploited
-14.02 console by itself.
+## Security and compatibility limits
 
-The notification menu is a first payload-stage interface, not the full
-framebuffer overlay from the existing ELF application. The SDK does not expose
-the OpenOrbis VideoOut framebuffer APIs used by that ELF. A true shell/game
-overlay needs a separate, verified graphics hook/runtime and must not be
-faked by relabeling the ELF.
+This payload does not contain a firmware exploit or kernel patch chain. It
+cannot jailbreak a stock 14.02 console on its own. The SDK's generic jailbreak
+helper does not supply a complete 14.02 exploit implementation.
+
+The native menu is not a replacement for the PS4 system shell and does not
+draw over games. A shell/game overlay would require a separate, verified
+graphics hook/runtime. Do not rename an ELF or PKG to `.bin`; they are
+different executable formats.
 
 ## Build
 
-The repository GitHub Actions workflow invokes the SDK's Docker-based build
-action and uploads `payload/Plutana-HEN.bin` as a separate artifact.
+GitHub Actions builds the native ELF, GoldHEN PRX, and raw payload as separate
+artifacts. The payload Makefile provides the default `all` target expected by
+the SDK's Docker build action.
