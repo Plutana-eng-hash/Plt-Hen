@@ -201,15 +201,18 @@ void render(int page,int selected,const vypex::Config& cfg,
   text("FOLDER  /DATA/VYPEX-CR_CK/PLUGINS",1030,920,2,MUTED);
   text("GOLDHEN LOADS ENABLED PLUGINS WHEN AN APP OR GAME STARTS",1030,955,1,AMBER);
  } else if(page==4){
-  const char* opts[]={"BLOCK SYSTEM UPDATES","SHOW NOTIFICATIONS","SYNC GOLDHEN PLUGINS"};
-  const bool vals[]={cfg.block_updates,cfg.show_notifications,cfg.plugin_autoload};
-  for(int i=0;i<3;++i){
+  const char* opts[]={"BLOCK SYSTEM UPDATES","SHOW NOTIFICATIONS"};
+  const bool vals[]={cfg.block_updates,cfg.show_notifications};
+  for(int i=0;i<2;++i){
    int y=285+i*180; rect(440,y,1410,135,CARD);
    text(opts[i],480,y+32,3,WHITE);
    rect(1590,y+30,190,66,vals[i]?0xFF244B3D:0xFF343440);
    text(vals[i]?"ON":"OFF",1650,y+52,3,vals[i]?GREEN:MUTED);
    if(selected==i)rect(440,y,5,135,PURPLE);
   }
+  rect(440,665,1410,120,CARD);
+  text("GOLDHEN PLUGIN LOADER",480,690,3,WHITE);
+  text("ENABLE THIS IN THE GOLDHEN SETTINGS MENU",480,742,2,AMBER);
   text("CROSS TO TOGGLE  /  UP DOWN TO SELECT",445,885,2,MUTED);
  } else {
   card(440,275,1410,190,"VYPEX CR CK","ORIGINAL NATIVE HOME BREW FOUNDATION","PURPLE INTERFACE  /  OPENORBIS TOOLCHAIN",PURPLE);
@@ -268,9 +271,9 @@ int main() {
   }
   const std::uint32_t pressed=now&~previous; previous=now;
   if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)plugin_selected=(plugin_selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}
-  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%2;else page=(page+5)%6;}
   if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)plugin_selected=(plugin_selected+1)%static_cast<int>(plugin_count);}
-  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%2;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
   if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_TRIANGLE && page==3){
@@ -286,7 +289,6 @@ int main() {
    if(page==4){
     if(selected==0)config.block_updates=!config.block_updates;
     if(selected==1)config.show_notifications=!config.show_notifications;
-    if(selected==2)config.plugin_autoload=!config.plugin_autoload;
    }
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
