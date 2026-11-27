@@ -17,7 +17,7 @@ command -v xxd >/dev/null
 command -v curl >/dev/null
 command -v unzip >/dev/null
 
-"$ROOT/scripts/verify-source.sh"
+bash "$ROOT/scripts/verify-source.sh"
 
 if [[ ! -d "$SDK_DIR/.git" ]]; then
   mkdir -p "$(dirname "$SDK_DIR")"

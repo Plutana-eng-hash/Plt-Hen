@@ -25,7 +25,7 @@ On Ubuntu 22.04+ or WSL2 Ubuntu:
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential binutils gcc make curl unzip xxd git
-./scripts/build-payload.sh
+bash scripts/build-payload.sh
 ```
 
 The script checks the pinned upstream revision, builds the SDK's `libPS4`, runs the upstream HEN build, checks that the result is a non-empty raw payload, and writes:

@@ -31,8 +31,7 @@ jobs:
 
       - name: Verify source and build payload
         run: |
-          chmod +x scripts/*.sh
-          ./scripts/build-payload.sh
+          bash scripts/build-payload.sh
 
       - name: Upload payload and checksums
         uses: actions/upload-artifact@v4
