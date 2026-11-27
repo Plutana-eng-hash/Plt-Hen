@@ -1,4 +1,5 @@
 #include "vypex/core.hpp"
+#include "vypex/plugin_store.hpp"
 
 #include <orbis/libkernel.h>
 #include <orbis/VideoOut.h>
@@ -35,6 +36,7 @@ static const std::uint8_t font[36][5] = {
  {0x36,0x49,0x49,0x49,0x36},{0x26,0x49,0x49,0x49,0x3E}
 };
 constexpr int MAX_CONTROLLERS = 4;
+constexpr std::size_t MAX_PLUGINS = 32;
 int video=-1, active=0, pads[MAX_CONTROLLERS]={-1,-1,-1,-1}, user=-1;
 int controller_count=0;
 void* mapped=nullptr; off_t mem_offset=0; size_t mem_size=0;
@@ -137,7 +139,7 @@ void render_home(int selected,int frame) {
  text("VYPEX CR CK",1510,902,2,0xFFB69AFF);
  text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
 }
-void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,int frame) {
+void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,\n            const vypex::PluginEntry* plugin_items,std::size_t plugin_count,\n            int plugin_selected,bool plugin_storage_ok,int frame) {
  rect(0,0,W,H,BG);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
  text("VYPEX CR CK",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
@@ -169,9 +171,33 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
   card(440,495,1410,190,"INPUT BACKEND","NATIVE SCEPAD API","UP TO FOUR PS4-RECOGNIZED CONTROLLERS",WHITE);
   card(440,715,1410,190,"COMPATIBILITY","DUALSHOCK 4 AND OS-EXPOSED DEVICES","XBOX / DUALSENSE NEED A PS4-COMPATIBLE ADAPTER",AMBER);
  } else if(page==3){
-  card(440,275,1410,190,"PLUGIN REGISTRY","REGISTERED PLUGINS",plugins.count()?"ENTRIES ARE STORED IN THE LOCAL REGISTRY":"NO PLUGINS REGISTERED",WHITE);
-  card(440,495,1410,190,"PLUGIN LOADING","STATUS  UNAVAILABLE","PRX LOADING NEEDS A PRIVILEGED RUNTIME",AMBER);
-  card(440,715,1410,190,"SAFETY","NO FILES WILL BE LOADED","REGISTRY ONLY - NO EXECUTION BACKEND",MUTED);
+  rect(440,260,1410,72,CARD);
+  text("PS4 PLUGIN LIBRARY",470,282,3,WHITE);
+  text(plugin_storage_ok?"STORAGE READY":"STORAGE NOT AVAILABLE",1390,288,2,plugin_storage_ok?GREEN:AMBER);
+  const int visible=5;
+  int first=plugin_selected>=visible?plugin_selected-visible+1:0;
+  if(plugin_count==0){
+   rect(440,350,1410,250,CARD);
+   text("NO SPRX PLUGINS FOUND",485,405,3,WHITE);
+   text("COPY COMPATIBLE SPRX FILES INTO THE PLUGIN FOLDER",485,470,2,MUTED);
+   text("USE TRIANGLE TO RESCAN THE PS4 STORAGE",485,515,2,0xFFB69AFF);
+  } else {
+   for(int row=0;row<visible && static_cast<std::size_t>(first+row)<plugin_count;++row){
+    const std::size_t idx=static_cast<std::size_t>(first+row);
+    const int y=350+row*105;
+    const bool focused=static_cast<int>(idx)==plugin_selected;
+    rect(440,y,1410,88,focused?0xFF29213A:CARD);
+    if(focused)rect(440,y,5,88,PURPLE);
+    text(plugin_items[idx].name,475,y+17,3,WHITE);
+    text(plugin_items[idx].enabled?"ENABLED":"DISABLED",1260,y+25,2,plugin_items[idx].enabled?GREEN:MUTED);
+    text(plugin_items[idx].filename,1510,y+28,1,MUTED);
+   }
+  }
+  rect(440,900,1410,90,PANEL);
+  text("CROSS  TOGGLE SAVED STATE",470,920,2,0xFFE5D9FF);
+  text("TRIANGLE  RESCAN FOLDER",470,955,2,MUTED);
+  text("FOLDER  /DATA/VYPEX-CR_CK/PLUGINS",1030,920,2,MUTED);
+  text("PRX EXECUTION REQUIRES A COMPATIBLE PRIVILEGED RUNTIME",1030,955,1,AMBER);
  } else if(page==4){
   const char* opts[]={"BLOCK SYSTEM UPDATES","SHOW NOTIFICATIONS","PLUGIN AUTOLOAD"};
   const bool vals[]={cfg.block_updates,cfg.show_notifications,cfg.plugin_autoload};
@@ -197,7 +223,7 @@ void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRe
 }
 int main() {
  vypex::Config config=vypex::Config::defaults();
- vypex::PluginRegistry plugins;
+ vypex::PluginRegistry plugins;\n vypex::PluginEntry plugin_items[MAX_PLUGINS]{};\n std::size_t plugin_count=vypex::refresh_plugins(plugin_items,MAX_PLUGINS);\n const bool plugin_storage_ok=vypex::plugin_storage_ready();
  OrbisUserServiceInitializeParams params={};
  params.priority=ORBIS_KERNEL_PRIO_FIFO_LOWEST;
  const bool user_ok=sceUserServiceInitialize(&params)==0;
@@ -236,8 +262,8 @@ int main() {
     pads[i]=scePadOpen(user,ORBIS_PAD_PORT_TYPE_STANDARD,i,nullptr);
   }
   const std::uint32_t pressed=now&~previous; previous=now;
-  if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
-  if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)selected=(selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
+  if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)selected=(selected+1)%static_cast<int>(plugin_count);}\n  else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
   if(pressed&ORBIS_PAD_BUTTON_RIGHT){if(page==0)selected=(selected+1)%6;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_CROSS){
@@ -249,7 +275,7 @@ int main() {
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
   if(page==0) render_home(selected,static_cast<int>(frame));
-  else render(page,selected,config,plugins,static_cast<int>(frame));
+  else render(page,selected,config,plugins,plugin_items,plugin_count,selected,plugin_storage_ok,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
  graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
