@@ -1,36 +1,44 @@
-# Vypex-Cr_ck — native PS4 homebrew foundation
+# Vypex-Cr_ck — native PS4 homebrew + GoldHEN plugin
 
-Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02. It is not a browser application, a GoldHEN fork, or a jailbreak implementation.
+Vypex-Cr_ck targets PS4 firmware 14.02 and has two separate components:
 
-## Current build scope
+- **Vypex-Cr_ck.elf** — the native controller-driven configuration UI.
+- **Vypex-Cr_ck.prx** — a GoldHEN-loadable user-mode plugin with load/unload callbacks and a small per-process service-control worker.
 
-- Native C++ PS4 ELF built with the OpenOrbis toolchain.
-- Purple Vypex framebuffer interface and controller navigation.
-- PS4 controller input through the standard `scePad` interface.
-- Local discovery of `.sprx` files in `/data/Vypex-Cr_ck/plugins`.
-- Plugin toggles update GoldHEN's `/data/GoldHEN/plugins.ini` **[default]** section, preserving unrelated sections and creating a one-time backup at `plugins.ini.vypex.bak`.
-- GoldHEN plugin configuration is read back by Vypex so the UI reflects the configured enabled/disabled state.
-- Atomic temporary-file replacement is used when writing the GoldHEN plugin configuration.
-- Host-side configuration tests and a GitHub Actions PS4 ELF build.
+This is not a jailbreak, HEN replacement, kernel patch, or PS4 shell replacement.
 
-## GoldHEN 14.02 integration
+## GoldHEN PRX behavior
 
-1. Load GoldHEN first and make sure its **Plugin Loader** option is enabled.
-2. Copy compatible, firmware-appropriate `.sprx` plugins into `/data/Vypex-Cr_ck/plugins/`.
-3. Start Vypex, open **Plugins**, and toggle entries with Cross.
-4. Vypex writes those entries into the **[default]** section of `/data/GoldHEN/plugins.ini`. Existing entries in other title-ID sections are retained.
-5. GoldHEN loads enabled entries when a title/application process starts. A configuration change does not retroactively load or unload a plugin already mapped into a running process; close and relaunch the affected title to apply it.
+The PRX uses the public GoldHEN plugin lifecycle (`plugin_load` / `plugin_unload`) and standard module lifecycle entry points. GoldHEN's plugin loader injects configured plugins into application processes, so the PRX is instantiated per process when a title/application starts; it is not one global daemon that exists before a title launches.
 
-Vypex currently manages GoldHEN's plugin configuration. It is **not itself a GoldHEN PRX**, does not start a resident Vypex daemon, and cannot unload a PRX already running in another process. The app's exit control only exits the Vypex UI. A true in-session Vypex service with a self-unload command requires a separately built and tested PRX using the GoldHEN plugin SDK and a defined service lifecycle; this repository does not claim that exists yet.
+The PRX starts a lightweight worker in that process. It watches `/data/Vypex-Cr_ck/service.enabled` and updates `/data/Vypex-Cr_ck/service.status`. The Vypex UI's **Settings → Vypex Background Service** toggle writes `1` or `0` to that control file. Turning it off pauses the Vypex service behavior; the small control worker remains until GoldHEN calls `plugin_unload` or the host process exits. This toggle does **not** forcibly unmap the PRX from a running process.
 
-## Controller compatibility
+The PRX's `plugin_unload` callback stops and joins its worker. GoldHEN loads configured plugins when an application/game process starts, so changes to the plugin list apply to subsequently launched processes. GoldHEN Plugin Loader must be enabled in GoldHEN settings.
 
-The app reads controllers exposed by the PS4 through `scePad`. It does not install USB/Bluetooth drivers or convert an unsupported controller into a system-wide DualShock 4. Xbox and DualSense controllers require a PS4-compatible adapter/translator if the console does not already recognize them.
+## Install
 
-## Important limitations
+1. Load GoldHEN 14.02 and enable its **Plugin Loader** setting.
+2. Copy `Vypex-Cr_ck.prx` to `/data/Vypex-Cr_ck/plugins/Vypex-Cr_ck.prx` on the PS4.
+3. Launch the Vypex ELF UI and open **Plugins**. Enable Vypex-Cr_ck in the list; Vypex updates the `[default]` section of `/data/GoldHEN/plugins.ini`.
+4. Close and relaunch an application/game so GoldHEN loads the configured PRX into that process.
+5. Open Vypex **Settings** to pause/resume the Vypex background service.
 
-This repository does not contain a kernel exploit, firmware-specific kernel offsets, kernel patches, privilege escalation, or a PS4 system-shell replacement. It is a native user-mode homebrew app, not a jailbreak/HEN. The build artifact is an ELF, not an installable PKG.
+Vypex backs up the original GoldHEN plugin configuration to `/data/GoldHEN/plugins.ini.vypex.bak` before its first modification and preserves unrelated title-ID sections.
 
 ## Build
 
-Push to `main` or run **Actions → Build Vypex-Cr_ck native**. Download the `Vypex-Cr_ck-PS4-ELF` artifact from a successful workflow run.
+GitHub Actions builds both outputs. The PRX job downloads the public [GoldHEN Plugins SDK](https://github.com/GoldHEN/GoldHEN_Plugins_SDK) and OpenOrbis toolchain. It produces:
+
+- `build/Vypex-Cr_ck.elf`
+- `build-prx/out/Vypex-Cr_ck.prx`
+
+Run **Actions → Build Vypex-Cr_ck native and GoldHEN PRX** and download the combined artifact after the run succeeds.
+
+## Limitations
+
+- The PRX is a normal GoldHEN plugin, not a new jailbreak or kernel payload.
+- It does not survive a full power-off/reboot without GoldHEN being activated again.
+- The service toggle pauses Vypex's worker behavior; it is not a forced self-unload of the mapped PRX.
+- GoldHEN injects plugins per application process. It is not a global system service.
+- The native ELF UI and PRX are separate binaries; the PRX does not display the framebuffer UI over the PS4 shell or games.
+- Controller compatibility is limited to devices exposed by the PS4 through the standard `scePad` API.
