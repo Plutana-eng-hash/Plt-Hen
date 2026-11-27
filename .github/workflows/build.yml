@@ -1,4 +1,4 @@
-name: Build Vypex-Cr_ck native
+name: Build Vypex-Cr_ck native and GoldHEN PRX
 on:
   push:
     branches: [main]
@@ -8,7 +8,6 @@ permissions:
 concurrency:
   group: vypex-native-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   host-tests:
     runs-on: ubuntu-22.04
@@ -18,14 +17,13 @@ jobs:
         run: |
           g++ -std=c++17 -O2 -Wall -Wextra -Werror -Iinclude src/core.cpp tests/core_tests.cpp -o core-tests
           ./core-tests
-
-  ps4-elf:
+  ps4-builds:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Install build utilities
-        run: sudo apt-get update && sudo apt-get install -y curl tar file binutils clang lld llvm
-      - name: Download and locate OpenOrbis toolchain
+        run: sudo apt-get update && sudo apt-get install -y curl tar file binutils clang lld llvm make
+      - name: Download OpenOrbis toolchain
         shell: bash
         run: |
           set -euo pipefail
@@ -35,36 +33,32 @@ jobs:
             https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/download/v0.5.4/toolchain-llvm-18.tar.gz \
             -o "$RUNNER_TEMP/openorbis-toolchain.tar.gz"
           tar -xzf "$RUNNER_TEMP/openorbis-toolchain.tar.gz" -C "$root"
-
           sdk=""
           while IFS= read -r linker_script; do
             candidate="$(dirname "$linker_script")"
-            if [[ -f "$candidate/lib/crt1.o" && -d "$candidate/include" ]]; then
-              sdk="$candidate"
-              break
-            fi
+            if [[ -f "$candidate/lib/crt1.o" && -d "$candidate/include" ]]; then sdk="$candidate"; break; fi
           done < <(find "$root" -type f -name link.x -print)
-
-          if [[ -z "$sdk" ]]; then
-            echo "OpenOrbis archive extracted, but no SDK root containing link.x, include/, and lib/crt1.o was found." >&2
-            find "$root" -maxdepth 5 -type f | head -200
-            exit 1
-          fi
-
+          [[ -n "$sdk" ]] || { echo "OpenOrbis SDK root not found" >&2; exit 1; }
           echo "OO_PS4_TOOLCHAIN=$sdk" >> "$GITHUB_ENV"
-          echo "SDK root: $sdk"
-          clang++ --version
-          ld.lld --version
-      - name: Compile native PS4 ELF
+      - name: Download GoldHEN Plugin SDK
+        run: |
+          git clone --depth 1 https://github.com/GoldHEN/GoldHEN_Plugins_SDK.git "$RUNNER_TEMP/GoldHEN_Plugins_SDK"
+          echo "GOLDHEN_SDK=$RUNNER_TEMP/GoldHEN_Plugins_SDK" >> "$GITHUB_ENV"
+      - name: Build native ELF
         run: bash scripts/build-ps4.sh build
-      - name: Verify target ELF
+      - name: Build GoldHEN PRX
+        run: bash scripts/build-prx.sh build-prx
+      - name: Verify outputs
         run: |
           file build/Vypex-Cr_ck.elf
-          readelf -h build/Vypex-Cr_ck.elf
-      - name: Upload PS4 ELF
+          file build-prx/out/Vypex-Cr_ck.prx
+          readelf -h build-prx/Vypex-Cr_ck.prx.elf
+      - name: Upload PS4 ELF and GoldHEN PRX
         uses: actions/upload-artifact@v4
         with:
-          name: Vypex-Cr_ck-PS4-ELF
-          path: build/Vypex-Cr_ck.elf
+          name: Vypex-Cr_ck-PS4-ELF-and-PRX
+          path: |
+            build/Vypex-Cr_ck.elf
+            build-prx/out/Vypex-Cr_ck.prx
           if-no-files-found: error
           retention-days: 30
