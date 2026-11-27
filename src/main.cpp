@@ -172,7 +172,6 @@ int main() {
   sceKernelDebugOutText(0,"Vypex: native display initialization failed\n");
   graphics_end();
   for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]);
-  if(pad_ok)scePadTerminate();
   if(user_ok)sceUserServiceTerminate();
   return 1;
  }
@@ -211,6 +210,6 @@ int main() {
   render(page,selected,config,plugins,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
- graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(pad_ok)scePadTerminate(); if(user_ok)sceUserServiceTerminate();
+ graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
  return 0;
 }
