@@ -139,8 +139,9 @@ void render_home(int selected,int frame) {
  text("VYPEX CR CK",1510,902,2,0xFFB69AFF);
  text("STANDALONE NATIVE APP  /  DOES NOT REPLACE THE PS4 SYSTEM SHELL",80,1020,1,MUTED);
 }
-void render(int page,int selected,const vypex::Config& cfg,const vypex::PluginRegistry& plugins,
-            const vypex::PluginEntry* plugin_items,std::size_t plugin_count,\n            int plugin_selected,bool plugin_storage_ok,int frame) {
+void render(int page,int selected,const vypex::Config& cfg,
+            const vypex::PluginEntry* plugin_items,std::size_t plugin_count,
+            int plugin_selected,bool plugin_storage_ok,int frame) {
  rect(0,0,W,H,BG);
  rect(0,0,W,112,PANEL); rect(0,108,W,4,PURPLE);
  text("VYPEX CR CK",54,34,5,WHITE); text("NATIVE PS4 HOME BREW",610,49,2,MUTED);
