@@ -248,7 +248,8 @@ int main() {
    }
   }
   if(pressed&ORBIS_PAD_BUTTON_CIRCLE){if(page!=0)page=0;else running=false;}
-  if(page==0) render_home(selected,static_cast<int>(frame));\n  else render(page,selected,config,plugins,static_cast<int>(frame));
+  if(page==0) render_home(selected,static_cast<int>(frame));
+  else render(page,selected,config,plugins,static_cast<int>(frame));
   if(!present(frame++)){sceKernelDebugOutText(0,"Vypex: display flip failed\n");break;}
  }
  graphics_end(); for(int i=0;i<MAX_CONTROLLERS;++i)if(pads[i]>=0)scePadClose(pads[i]); if(user_ok)sceUserServiceTerminate();
