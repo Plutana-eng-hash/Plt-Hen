@@ -19,7 +19,7 @@ static const char *STATUS_FILE = "/data/Vypex-Cr_ck/service.status";
 
 static pthread_t g_worker;
 static pthread_mutex_t g_state_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool set_running(false);
+static bool g_running = false;
 static bool g_worker_started = false;
 
 static void set_running(bool running) {
@@ -80,7 +80,7 @@ int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
     (void)mkdir(ROOT, 0777);
     set_running(true);
     if (pthread_create(&g_worker, NULL, service_worker, NULL) != 0) {
-        g_running = false;
+        set_running(false);
         write_status("START_FAILED");
         return -1;
     }
