@@ -5,10 +5,22 @@ Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02
 ## Current build scope
 
 - Native C++ project built for the PS4 target with the OpenOrbis toolchain.
-- Purple Vypex identity and a small native runtime/status core.
+- Purple Vypex identity and native framebuffer interface.
+- Controller input through the PS4 `scePad` API, polling up to four standard controller slots.
+- Controller disconnect handling and periodic reconnection attempts.
+- Controller status page in the interface.
 - Plugin registry model (metadata, enable/disable state, validation and listing).
 - Configuration parsing/serialization with safe defaults.
 - GitHub Actions builds a PS4-target ELF artifact and runs host-side tests.
+
+## Controller compatibility
+
+The application reads controllers that the PS4 operating system exposes through its standard `scePad` interface. This is not a universal USB/Bluetooth HID driver and it cannot pair unsupported controllers or impersonate a DualShock 4 at the console/system level.
+
+- DualShock 4 and other devices already recognized by the PS4 can be read by the app.
+- Xbox controllers and DualSense controllers are **not made PS4-compatible by this application**. Use a PS4-compatible hardware adapter/translator if you want to use one on the console; the adapter must present itself to the PS4 as a supported controller.
+- The controller status page reports the number of active standard controller slots. It does not identify every controller model or guarantee compatibility with every third-party device.
+- Multi-controller polling is implemented in source, but must still be tested on a physical PS4 and with each specific controller/adapter.
 
 ## Important limitations
 
