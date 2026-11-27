@@ -133,7 +133,7 @@ bool ensure_default_autoload(const char* path) {
         const std::string line = trim(raw);
         if (!line.empty() && line.front() == '[' && line.back() == ']') {
             if (in_default && !inserted) {
-                updated.emplace_back(std::string(path) + "=true\\n");
+                updated.emplace_back(std::string(path) + "=true\n");
                 inserted = true;
             }
             in_default = line == "[default]";
@@ -142,14 +142,14 @@ bool ensure_default_autoload(const char* path) {
     }
 
     if (in_default && !inserted) {
-        updated.emplace_back(std::string(path) + "=true\\n");
+        updated.emplace_back(std::string(path) + "=true\n");
         inserted = true;
     }
     if (!default_found) {
-        if (!updated.empty() && updated.back().find('\\n') == std::string::npos)
-            updated.back().push_back('\\n');
-        updated.emplace_back("\\n[default]\\n");
-        updated.emplace_back(std::string(path) + "=true\\n");
+        if (!updated.empty() && updated.back().find('\n') == std::string::npos)
+            updated.back().push_back('\n');
+        updated.emplace_back("\n[default]\n");
+        updated.emplace_back(std::string(path) + "=true\n");
     }
 
     FILE* output = std::fopen(GHEN_TEMP, "w");
