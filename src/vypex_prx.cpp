@@ -1,5 +1,4 @@
 #include <pthread.h>
-#include <atomic>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -19,8 +18,22 @@ static const char *ENABLED_FILE = "/data/Vypex-Cr_ck/service.enabled";
 static const char *STATUS_FILE = "/data/Vypex-Cr_ck/service.status";
 
 static pthread_t g_worker;
-static std::atomic<bool> g_running{false};
+static pthread_mutex_t g_state_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool set_running(false);
 static bool g_worker_started = false;
+
+static void set_running(bool running) {
+    (void)pthread_mutex_lock(&g_state_mutex);
+    g_running = running;
+    (void)pthread_mutex_unlock(&g_state_mutex);
+}
+
+static bool worker_running(void) {
+    (void)pthread_mutex_lock(&g_state_mutex);
+    const bool running = g_running;
+    (void)pthread_mutex_unlock(&g_state_mutex);
+    return running;
+}
 
 static bool service_enabled(void) {
     FILE *file = fopen(ENABLED_FILE, "r");
@@ -41,7 +54,7 @@ static void write_status(const char *status) {
 static void *service_worker(void *unused) {
     (void)unused;
     bool last_enabled = false;
-    while (g_running.load()) {
+    while (worker_running()) {
         const bool enabled = service_enabled();
         if (enabled != last_enabled) {
             write_status(enabled ? "RUNNING" : "STOPPED_BY_USER");
@@ -54,7 +67,7 @@ static void *service_worker(void *unused) {
 
 static void stop_worker(void) {
     if (g_worker_started) {
-        g_running.store(false);
+        set_running(false);
         (void)pthread_join(g_worker, NULL);
         g_worker_started = false;
     }
@@ -65,7 +78,7 @@ int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
     (void)argc;
     (void)argv;
     (void)mkdir(ROOT, 0777);
-    g_running.store(true);
+    set_running(true);
     if (pthread_create(&g_worker, NULL, service_worker, NULL) != 0) {
         g_running = false;
         write_status("START_FAILED");
