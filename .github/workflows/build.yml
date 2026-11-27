@@ -23,41 +23,47 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Download latest OpenOrbis toolchain release
+      - name: Install build utilities
+        run: sudo apt-get update && sudo apt-get install -y curl tar file binutils
+      - name: Download and locate OpenOrbis toolchain
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json, os, urllib.request, zipfile, io
-          api = "https://api.github.com/repos/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/latest"
-          request = urllib.request.Request(api, headers={"Accept": "application/vnd.github+json", "User-Agent": "Vypex-Cr_ck-CI"})
-          with urllib.request.urlopen(request, timeout=60) as response:
-              release = json.load(response)
-          assets = [a for a in release.get("assets", []) if a["name"].lower().endswith(".zip")]
-          assets = [a for a in assets if "source" not in a["name"].lower() and "windows" not in a["name"].lower() and "mac" not in a["name"].lower()]
-          if not assets:
-              raise SystemExit("No Linux-compatible OpenOrbis toolchain ZIP was attached to the latest release.")
-          asset = next((a for a in assets if "linux" in a["name"].lower()), assets[0])
-          req = urllib.request.Request(asset["browser_download_url"], headers={"User-Agent": "Vypex-Cr_ck-CI"})
-          with urllib.request.urlopen(req, timeout=180) as response:
-              data = response.read()
-          root = os.path.join(os.environ["RUNNER_TEMP"], "openorbis")
-          os.makedirs(root, exist_ok=True)
-          with zipfile.ZipFile(io.BytesIO(data)) as archive:
-              archive.extractall(root)
-          candidates = []
-          for current, dirs, files in os.walk(root):
-              if "link.x" in files and "crt1.o" in files:
-                  candidates.append(current)
-          if not candidates:
-              raise SystemExit("Downloaded release did not contain the expected OpenOrbis link.x and lib/crt1.o files.")
-          toolchain = candidates[0]
-          with open(os.environ["GITHUB_ENV"], "a") as env:
-              env.write("OO_PS4_TOOLCHAIN=" + toolchain + "\n")
-              env.write("PATH=" + os.path.join(toolchain, "bin", "linux") + ":" + os.environ["PATH"] + "\n")
-          print("Using toolchain at", toolchain)
-          print("Release asset:", asset["name"])
-          PY
+          root="$RUNNER_TEMP/openorbis"
+          mkdir -p "$root"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/download/v0.5.4/toolchain-llvm-18.tar.gz \
+            -o "$RUNNER_TEMP/openorbis-toolchain.tar.gz"
+          tar -xzf "$RUNNER_TEMP/openorbis-toolchain.tar.gz" -C "$root"
+
+          sdk=""
+          while IFS= read -r linker_script; do
+            candidate="$(dirname "$linker_script")"
+            if [[ -f "$candidate/lib/crt1.o" && -d "$candidate/include" ]]; then
+              sdk="$candidate"
+              break
+            fi
+          done < <(find "$root" -type f -name link.x -print)
+
+          if [[ -z "$sdk" ]]; then
+            echo "OpenOrbis archive extracted, but no SDK root containing link.x, include/, and lib/crt1.o was found." >&2
+            find "$root" -maxdepth 5 -type f | head -200
+            exit 1
+          fi
+
+          clangxx="$(find "$root" -type f -name clang++ -perm -u+x -print -quit)"
+          lld="$(find "$root" -type f -name ld.lld -perm -u+x -print -quit)"
+          if [[ -z "$clangxx" || -z "$lld" ]]; then
+            echo "OpenOrbis LLVM compiler/linker binaries were not found in the release archive." >&2
+            find "$root" -maxdepth 6 -type f | head -200
+            exit 1
+          fi
+
+          echo "OO_PS4_TOOLCHAIN=$sdk" >> "$GITHUB_ENV"
+          echo "PATH=$(dirname "$clangxx"):$(dirname "$lld"):$PATH" >> "$GITHUB_ENV"
+          echo "SDK root: $sdk"
+          "$clangxx" --version
+          "$lld" --version
       - name: Compile native PS4 ELF
         run: bash scripts/build-ps4.sh build
       - name: Verify target ELF
