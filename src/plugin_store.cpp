@@ -103,6 +103,72 @@ bool backup_config() {
     return ok;
 }
 
+bool ensure_default_autoload(const char* path) {
+    std::vector<std::string> lines;
+    if (!read_lines(lines) || !backup_config()) return false;
+
+    bool in_default = false;
+    bool default_found = false;
+    for (const auto& raw : lines) {
+        const std::string line = trim(raw);
+        if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            in_default = line == "[default]";
+            if (in_default) default_found = true;
+            continue;
+        }
+        if (in_default) {
+            bool enabled = false;
+            if (parse_plugin_line(raw, path, enabled)) {
+                // Respect an existing explicit true/false setting.
+                return true;
+            }
+        }
+    }
+
+    std::vector<std::string> updated;
+    updated.reserve(lines.size() + 2);
+    in_default = false;
+    bool inserted = false;
+    for (const auto& raw : lines) {
+        const std::string line = trim(raw);
+        if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            if (in_default && !inserted) {
+                updated.emplace_back(std::string(path) + "=true\\n");
+                inserted = true;
+            }
+            in_default = line == "[default]";
+        }
+        updated.push_back(raw);
+    }
+
+    if (in_default && !inserted) {
+        updated.emplace_back(std::string(path) + "=true\\n");
+        inserted = true;
+    }
+    if (!default_found) {
+        if (!updated.empty() && updated.back().find('\\n') == std::string::npos)
+            updated.back().push_back('\\n');
+        updated.emplace_back("\\n[default]\\n");
+        updated.emplace_back(std::string(path) + "=true\\n");
+    }
+
+    FILE* output = std::fopen(GHEN_TEMP, "w");
+    if (!output) return false;
+    bool ok = true;
+    for (const auto& line : updated) {
+        if (std::fwrite(line.data(), 1, line.size(), output) != line.size()) {
+            ok = false;
+            break;
+        }
+    }
+    if (std::fclose(output) != 0) ok = false;
+    if (!ok || std::rename(GHEN_TEMP, GHEN_CONFIG) != 0) {
+        std::remove(GHEN_TEMP);
+        return false;
+    }
+    return true;
+}
+
 bool write_goldhen_config(const PluginEntry* entries, std::size_t count) {
     std::vector<std::string> lines;
     if (!read_lines(lines) || !backup_config()) return false;
@@ -207,6 +273,14 @@ std::size_t refresh_plugins(PluginEntry* entries, std::size_t capacity) {
         ++count;
     }
     ::closedir(dir);
+
+    // Register Vypex for automatic loading by GoldHEN in every title.
+    for (std::size_t i = 0; i < count; ++i) {
+        if (std::strcmp(entries[i].filename, "Vypex-Cr_ck.prx") == 0) {
+            (void)ensure_default_autoload(entries[i].path);
+            break;
+        }
+    }
     return count;
 }
 
