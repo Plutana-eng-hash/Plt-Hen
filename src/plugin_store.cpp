@@ -5,13 +5,16 @@
 #include <cstdio>
 #include <cstring>
 #include <cctype>
+#include <string>
+#include <vector>
 
 namespace vypex {
 namespace {
 constexpr const char* ROOT = "/data/Vypex-Cr_ck";
 constexpr const char* PLUGIN_DIR = "/data/Vypex-Cr_ck/plugins";
-constexpr const char* STATE_FILE = "/data/Vypex-Cr_ck/plugins.ini";
-constexpr const char* TEMP_FILE = "/data/Vypex-Cr_ck/plugins.ini.tmp";
+constexpr const char* GHEN_CONFIG = "/data/GoldHEN/plugins.ini";
+constexpr const char* GHEN_BACKUP = "/data/GoldHEN/plugins.ini.vypex.bak";
+constexpr const char* GHEN_TEMP = "/data/GoldHEN/plugins.ini.vypex.tmp";
 
 bool make_directory(const char* path) {
     if (::mkdir(path, 0777) == 0) return true;
@@ -32,41 +35,140 @@ bool ends_with_sprx(const char* name) {
         std::tolower(static_cast<unsigned char>(name[n - 1])) == 'x';
 }
 
-bool saved_state(const char* filename) {
-    FILE* file = std::fopen(STATE_FILE, "r");
-    if (!file) return false;
-    char line[192];
-    bool enabled = false;
-    while (std::fgets(line, sizeof(line), file)) {
-        char* equal = std::strchr(line, '=');
-        if (!equal) continue;
-        *equal++ = '\0';
-        if (std::strcmp(line, filename) == 0) {
-            enabled = (*equal == '1');
-            break;
-        }
-    }
-    std::fclose(file);
-    return enabled;
+std::string trim(const std::string& value) {
+    const std::size_t first = value.find_first_not_of(" \t\r");
+    if (first == std::string::npos) return {};
+    const std::size_t last = value.find_last_not_of(" \t\r");
+    return value.substr(first, last - first + 1);
 }
 
-bool save_states(const PluginEntry* entries, std::size_t count) {
-    FILE* file = std::fopen(TEMP_FILE, "w");
-    if (!file) return false;
-    for (std::size_t i = 0; i < count; ++i) {
-        if (std::fprintf(file, "%s=%d\n", entries[i].filename,
-                         entries[i].enabled ? 1 : 0) < 0) {
+bool read_lines(std::vector<std::string>& lines) {
+    FILE* file = std::fopen(GHEN_CONFIG, "r");
+    if (!file) return true;
+    char line[1024];
+    while (std::fgets(line, sizeof(line), file)) {
+        lines.emplace_back(line);
+        if (lines.size() > 4096) {
             std::fclose(file);
-            std::remove(TEMP_FILE);
             return false;
         }
     }
-    if (std::fclose(file) != 0) {
-        std::remove(TEMP_FILE);
-        return false;
+    const bool ok = std::ferror(file) == 0;
+    std::fclose(file);
+    return ok;
+}
+
+bool parse_plugin_line(const std::string& raw, const char* path, bool& enabled) {
+    const std::string line = trim(raw);
+    if (line.empty() || line[0] == ';' || line[0] == '#') return false;
+    const std::size_t eq = line.find('=');
+    const std::string configured = trim(line.substr(0, eq));
+    if (configured != path) return false;
+    enabled = eq == std::string::npos || trim(line.substr(eq + 1)) != "false";
+    return true;
+}
+
+bool saved_state(const char* path) {
+    std::vector<std::string> lines;
+    if (!read_lines(lines)) return false;
+    bool in_default = false;
+    bool enabled = false;
+    for (const auto& raw : lines) {
+        const std::string line = trim(raw);
+        if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            in_default = line == "[default]";
+            continue;
+        }
+        if (in_default && parse_plugin_line(raw, path, enabled)) return enabled;
     }
-    if (std::rename(TEMP_FILE, STATE_FILE) != 0) {
-        std::remove(TEMP_FILE);
+    return false;
+}
+
+bool backup_config() {
+    struct stat info{};
+    if (::stat(GHEN_BACKUP, &info) == 0) return true;
+    FILE* source = std::fopen(GHEN_CONFIG, "rb");
+    if (!source) return true;
+    FILE* backup = std::fopen(GHEN_BACKUP, "wb");
+    if (!backup) { std::fclose(source); return false; }
+    char buffer[4096];
+    std::size_t count = 0;
+    bool ok = true;
+    while ((count = std::fread(buffer, 1, sizeof(buffer), source)) != 0) {
+        if (std::fwrite(buffer, 1, count, backup) != count) { ok = false; break; }
+    }
+    if (std::ferror(source)) ok = false;
+    if (std::fclose(source) != 0) ok = false;
+    if (std::fclose(backup) != 0) ok = false;
+    if (!ok) std::remove(GHEN_BACKUP);
+    return ok;
+}
+
+bool write_goldhen_config(const PluginEntry* entries, std::size_t count) {
+    std::vector<std::string> lines;
+    if (!read_lines(lines) || !backup_config()) return false;
+
+    std::vector<std::string> updated;
+    updated.reserve(lines.size() + count + 2);
+    bool in_default = false;
+    bool default_found = false;
+    bool inserted = false;
+
+    for (const auto& raw : lines) {
+        const std::string line = trim(raw);
+        if (!line.empty() && line.front() == '[' && line.back() == ']') {
+            if (in_default && !inserted) {
+                for (std::size_t i = 0; i < count; ++i)
+                    updated.emplace_back(std::string(entries[i].path) +
+                        (entries[i].enabled ? "=true\n" : "=false\n"));
+                inserted = true;
+            }
+            in_default = line == "[default]";
+            if (in_default) default_found = true;
+            updated.push_back(raw);
+            continue;
+        }
+        if (in_default) {
+            bool is_managed = false;
+            for (std::size_t i = 0; i < count; ++i) {
+                bool ignored = false;
+                if (parse_plugin_line(raw, entries[i].path, ignored)) {
+                    is_managed = true;
+                    break;
+                }
+            }
+            if (is_managed) continue;
+        }
+        updated.push_back(raw);
+    }
+
+    if (in_default && !inserted) {
+        for (std::size_t i = 0; i < count; ++i)
+            updated.emplace_back(std::string(entries[i].path) +
+                (entries[i].enabled ? "=true\n" : "=false\n"));
+        inserted = true;
+    }
+    if (!default_found) {
+        if (!updated.empty() && updated.back().find('\n') == std::string::npos)
+            updated.back().push_back('\n');
+        updated.emplace_back("\n[default]\n");
+        for (std::size_t i = 0; i < count; ++i)
+            updated.emplace_back(std::string(entries[i].path) +
+                (entries[i].enabled ? "=true\n" : "=false\n"));
+    }
+
+    FILE* output = std::fopen(GHEN_TEMP, "w");
+    if (!output) return false;
+    bool ok = true;
+    for (const auto& line : updated) {
+        if (std::fwrite(line.data(), 1, line.size(), output) != line.size()) {
+            ok = false;
+            break;
+        }
+    }
+    if (std::fclose(output) != 0) ok = false;
+    if (!ok || std::rename(GHEN_TEMP, GHEN_CONFIG) != 0) {
+        std::remove(GHEN_TEMP);
         return false;
     }
     return true;
@@ -102,7 +204,7 @@ std::size_t refresh_plugins(PluginEntry* entries, std::size_t capacity) {
         }
         std::strncpy(entry.path, full_path, sizeof(entry.path) - 1);
         entry.size = static_cast<std::uint64_t>(info.st_size);
-        entry.enabled = saved_state(entry.filename);
+        entry.enabled = saved_state(entry.path);
         ++count;
     }
     ::closedir(dir);
@@ -114,7 +216,7 @@ bool set_plugin_enabled(PluginEntry* entries, std::size_t count,
     if (!entries || index >= count) return false;
     const bool previous = entries[index].enabled;
     entries[index].enabled = enabled;
-    if (save_states(entries, count)) return true;
+    if (write_goldhen_config(entries, count)) return true;
     entries[index].enabled = previous;
     return false;
 }
