@@ -1,0 +1,9 @@
+/.deps/
+/out/
+/vendor/ps4-hen/kpayload/build/
+/vendor/ps4-hen/installer/build/
+/vendor/ps4-hen/tmp/
+/vendor/ps4-hen/hen.bin
+/vendor/ps4-hen/kpayload/*.bin
+/vendor/ps4-hen/installer/*.bin
+*.map
