@@ -2,6 +2,8 @@ name: Build Plt-Hen native, PRX, and payload
 on:
   push:
     branches: [main, payload-bin-14.02]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
