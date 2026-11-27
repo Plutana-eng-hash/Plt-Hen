@@ -8,10 +8,12 @@
 #define attr_public __attribute__((visibility("default")))
 #define attr_module_hidden __attribute__((weak)) __attribute__((visibility("hidden")))
 
+extern "C" {
 attr_public const char *g_pluginName = "Vypex-Cr_ck";
 attr_public const char *g_pluginDesc = "Vypex background service for GoldHEN";
 attr_public const char *g_pluginAuth = "Plutana";
 attr_public uint32_t g_pluginVersion = 0x00000100;
+}
 
 static const char *ROOT = "/data/Vypex-Cr_ck";
 static const char *ENABLED_FILE = "/data/Vypex-Cr_ck/service.enabled";
@@ -74,7 +76,7 @@ static void stop_worker(void) {
     write_status("UNLOADED");
 }
 
-int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
+extern "C" int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
     (void)argc;
     (void)argv;
     (void)mkdir(ROOT, 0777);
@@ -89,20 +91,20 @@ int32_t attr_public plugin_load(int32_t argc, const char *argv[]) {
     return 0;
 }
 
-int32_t attr_public plugin_unload(int32_t argc, const char *argv[]) {
+extern "C" int32_t attr_public plugin_unload(int32_t argc, const char *argv[]) {
     (void)argc;
     (void)argv;
     stop_worker();
     return 0;
 }
 
-int32_t attr_module_hidden module_start(int64_t argc, const void *args) {
+extern "C" int32_t attr_module_hidden module_start(int64_t argc, const void *args) {
     (void)argc;
     (void)args;
     return 0;
 }
 
-int32_t attr_module_hidden module_stop(int64_t argc, const void *args) {
+extern "C" int32_t attr_module_hidden module_stop(int64_t argc, const void *args) {
     (void)argc;
     (void)args;
     stop_worker();
