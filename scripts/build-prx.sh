@@ -21,6 +21,7 @@ ld.lld -m elf_x86_64 -pie --script "$TOOLCHAIN/link.x" -e _init --eh-frame-hdr \
   -o "$BUILD_DIR/Vypex-Cr_ck.prx.elf"
 mkdir -p "$BUILD_DIR/out"
 "$TOOLCHAIN/bin/linux/create-fself" -in="$BUILD_DIR/Vypex-Cr_ck.prx.elf" \
-  -out="$BUILD_DIR/out/Vypex-Cr_ck.prx" --lib="$BUILD_DIR/out/Vypex-Cr_ck.prx" \
+  -out="$BUILD_DIR/Vypex-Cr_ck.prx.oelf" --lib="$BUILD_DIR/out/Vypex-Cr_ck.prx" \
   --paid 0x3800000000000011
+test -s "$BUILD_DIR/out/Vypex-Cr_ck.prx" || { echo "PRX output is missing or empty" >&2; exit 1; }
 file "$BUILD_DIR/out/Vypex-Cr_ck.prx"
