@@ -175,7 +175,7 @@ void render(int page,int selected,const vypex::Config& cfg,
  if(page==0){
   card(440,275,690,220,"GOLDHEN INTEGRATION","CONFIG MANAGER ONLY","GOLDHEN STATUS IS NOT VERIFIED BY THIS APP",AMBER);
   card(1160,275,690,220,"FIRMWARE PROFILE","TARGET  14 02","KERNEL PATCHES  NOT PRESENT",AMBER);
-  card(440,530,690,220,"GOLDHEN PLUGIN MANAGER","DISCOVERED SPRX FILES",plugin_count?"SPRX FILES FOUND":"NO SPRX FILES FOUND",WHITE);
+  card(440,530,690,220,"GOLDHEN PLUGIN MANAGER","DISCOVERED PRX FILES",plugin_count?"PRX FILES FOUND":"NO PRX FILES FOUND",WHITE);
   card(1160,530,690,220,"CONFIGURATION","UPDATE BLOCKING",cfg.block_updates?"ENABLED":"DISABLED",cfg.block_updates?GREEN:MUTED);
   text("THIS IS THE NATIVE VYPEX USER MODE INTERFACE",445,830,2,MUTED);
   text("GOLDHEN PLUGIN LOADER MUST BE ENABLED IN GOLDHEN SETTINGS",445,870,2,AMBER);
@@ -195,8 +195,8 @@ void render(int page,int selected,const vypex::Config& cfg,
   int first=plugin_selected>=visible?plugin_selected-visible+1:0;
   if(plugin_count==0){
    rect(440,350,1410,250,CARD);
-   text("NO SPRX PLUGINS FOUND",485,405,3,WHITE);
-   text("COPY COMPATIBLE SPRX FILES INTO THE PLUGIN FOLDER",485,470,2,MUTED);
+   text("NO PRX PLUGINS FOUND",485,405,3,WHITE);
+   text("COPY COMPATIBLE PRX FILES INTO THE PLUGIN FOLDER",485,470,2,MUTED);
    text("USE TRIANGLE TO RESCAN THE PS4 STORAGE",485,515,2,0xFFB69AFF);
   } else {
    for(int row=0;row<visible && static_cast<std::size_t>(first+row)<plugin_count;++row){
@@ -285,7 +285,7 @@ int main() {
   }
   const std::uint32_t pressed=now&~previous; previous=now;
   if(page==3 && (pressed&ORBIS_PAD_BUTTON_UP)){if(plugin_count)plugin_selected=(plugin_selected+static_cast<int>(plugin_count)-1)%static_cast<int>(plugin_count);}
-  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+5)%6;}
+  else if(pressed&ORBIS_PAD_BUTTON_UP){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+2)%3;else page=(page+5)%6;}
   if(page==3 && (pressed&ORBIS_PAD_BUTTON_DOWN)){if(plugin_count)plugin_selected=(plugin_selected+1)%static_cast<int>(plugin_count);}
   else if(pressed&ORBIS_PAD_BUTTON_DOWN){if(page==0)selected=(selected+3)%6;else if(page==4)selected=(selected+1)%3;else page=(page+1)%6;}
   if(pressed&ORBIS_PAD_BUTTON_LEFT){if(page==0)selected=(selected+5)%6;else page=(page+5)%6;}
