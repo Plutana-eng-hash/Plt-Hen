@@ -18,7 +18,8 @@ constexpr std::uint32_t PURPLE = 0xFFE8EDF5;
 constexpr std::uint32_t BG = 0xFF05070B, PANEL = 0xFF0D1118;
 constexpr std::uint32_t CARD = 0xFF121923, WHITE = 0xFFF4F7FB;
 constexpr std::uint32_t MUTED = 0xFF929EAE, GREEN = 0xFF55D69E;
-constexpr std::uint32_t AMBER = 0xFFF2C36B;\nconstexpr std::uint32_t SNOW = 0xFFCBD5E1;
+constexpr std::uint32_t AMBER = 0xFFF2C36B;
+constexpr std::uint32_t SNOW = 0xFFCBD5E1;
 
 static const std::uint8_t font[36][5] = {
  {0x7E,0x11,0x11,0x11,0x7E},{0x7F,0x49,0x49,0x49,0x36},{0x3E,0x41,0x41,0x41,0x22},
