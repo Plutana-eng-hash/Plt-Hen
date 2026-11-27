@@ -9,7 +9,7 @@ Vypex-Cr_ck is an original native PS4 homebrew codebase targeting firmware 14.02
 - Controller input through the PS4 `scePad` API, polling up to four standard controller slots.
 - Controller disconnect handling and periodic reconnection attempts.
 - Controller status page in the interface.
-- Plugin registry model (metadata, enable/disable state, validation and listing).
+- Native PS4 plugin-library screen with D-pad selection, Cross enable/disable, and Triangle rescan.\n- Scans `/data/Vypex-Cr_ck/plugins` for `.sprx` files and persists enable flags in `/data/Vypex-Cr_ck/plugins.ini`.\n- Uses the PS4 filesystem and controller APIs directly for local discovery and interaction; plugin flags are configuration only.
 - Configuration parsing/serialization with safe defaults.
 - GitHub Actions builds a PS4-target ELF artifact and runs host-side tests.
 
@@ -26,7 +26,7 @@ The application reads controllers that the PS4 operating system exposes through 
 
 This repository does not currently contain a kernel exploit, firmware-specific kernel offsets, kernel patches, privilege escalation, or a PS4 system-shell replacement. Therefore it is **not a jailbreak/HEN** and cannot enable PRX loading or privileged plugin management by itself. Those features require a separately supplied, compatible privileged runtime. The build artifact is a native homebrew ELF, not an installable PKG.
 
-## Build
+## Plugin manager\n\nCreate `/data/Vypex-Cr_ck/plugins` on the PS4 and copy compatible `.sprx` files there. Open **Plugins** in Vypex, use Up/Down to select a file, Cross to persist its enabled flag, and Triangle to rescan. The current build is a library/configuration manager only; enabled does not mean loaded or running.\n\n## Build
 
 Push to `main` or run **Actions → Build Vypex-Cr_ck native**. Download the `Vypex-Cr_ck-PS4-ELF` artifact from the run.
 
